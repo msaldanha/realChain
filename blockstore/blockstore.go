@@ -5,7 +5,17 @@ import (
 	. "github.com/msaldanha/realChain/keyvaluestore"
 	"errors"
 	"github.com/msaldanha/realChain/validator"
+	"math/big"
+	"bytes"
+	"math"
+	"crypto/sha256"
+	"fmt"
+	"encoding/binary"
+	"log"
+	"encoding/hex"
 )
+
+const targetBits int16 = 16
 
 type BlockStore struct {
 	store                 Storer
@@ -47,4 +57,67 @@ func (bs *BlockStore) Retrieve(hash string) (*Block, error) {
 	}
 
 	return nil, nil
+}
+
+func (bs *BlockStore) CalculatePow(block *Block) (int64, []byte, error) {
+	var hashInt big.Int
+	var hash [32]byte
+	var nonce int64 = 0
+
+	target := getTarget()
+
+	data, err := block.GetHashableBytes()
+	if err != nil {
+		return 0, nil, err
+	}
+
+	for nonce < math.MaxInt64 {
+		dataWithNonce := append(data, int64ToBytes(nonce))
+		hash = sha256.Sum256(bytes.Join(dataWithNonce, []byte{}))
+		//fmt.Printf("\r%x", hash)
+		hashInt.SetBytes(hash[:])
+
+		if hashInt.Cmp(target) == -1 {
+			break
+		} else {
+			nonce++
+		}
+	}
+	fmt.Print("\n\n")
+
+	hexHash := []byte(hex.EncodeToString(hash[:]))
+
+	return nonce, hexHash[:], nil
+}
+
+func (bs *BlockStore) VerifyPow(block *Block) (bool, error) {
+	var hashInt big.Int
+
+	target := getTarget()
+
+	data, err := block.GetHashableBytes()
+	if err != nil {
+		return false, err
+	}
+	dataWithNonce := append(data, int64ToBytes(block.PowNonce))
+	hash := sha256.Sum256(bytes.Join(dataWithNonce, []byte{}))
+	hashInt.SetBytes(hash[:])
+
+	return hashInt.Cmp(target) == -1, nil
+}
+
+func getTarget() (*big.Int) {
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-targetBits))
+	return target
+}
+
+func int64ToBytes(num int64) []byte {
+	buff := new(bytes.Buffer)
+	err := binary.Write(buff, binary.BigEndian, num)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return buff.Bytes()
 }

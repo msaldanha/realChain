@@ -29,6 +29,8 @@ type Block struct {
 	Balance 		float64
 	Hash 			[]byte
 	Signature 		[]byte
+	PowTarget		int16
+	PowNonce		int64
 }
 
 func (bt BlockType) IsValid() (bool) {
@@ -51,14 +53,22 @@ func (bt BlockType) String() (string) {
 }
 
 func (b *Block) SetHash() (error) {
-	var balance bytes.Buffer
-	if err := binary.Write(&balance, binary.LittleEndian, b.Balance); err != nil {
+	hashableBytes, err := b.GetHashableBytes()
+	if err != nil {
 		return err
 	}
-	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
-	headers := bytes.Join([][]byte{timestamp, b.Account, b.Representative,
-		b.Previous, b.Link, b.Work, balance.Bytes()}, []byte{})
+	headers := bytes.Join(hashableBytes, []byte{})
 	hash := sha256.Sum256(headers)
 	b.Hash = []byte(hex.EncodeToString(hash[:]))
 	return nil
+}
+
+func (b *Block) GetHashableBytes() ([][]byte, error) {
+	var balance bytes.Buffer
+	if err := binary.Write(&balance, binary.LittleEndian, b.Balance); err != nil {
+		return nil, err
+	}
+	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
+	return [][]byte{timestamp, b.Account, b.Representative,
+		b.Previous, b.Link, b.Work, balance.Bytes()}, nil
 }
