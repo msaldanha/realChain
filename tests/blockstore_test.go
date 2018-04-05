@@ -26,16 +26,23 @@ var _ = Describe("BlockStore", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Invalid block type"))
 
-		block = &Block{Type: SEND, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr", Timestamp: time.Now().Unix()}
+		block = &Block{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
+
+			ok, err = bs.Store(block)
+		Expect(ok).To(BeNil())
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(Equal("Block hash can not be empty"))
+
+		block.SetHash()
 
 		ok, err = bs.Store(block)
 		Expect(ok).To(BeNil())
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Destination not found"))
 
-		dest := &Block{Type: OPEN, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr", Timestamp: time.Now().Unix()}
+		dest := &Block{Type: OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
 		ms.Put("ddddddddddddd", dest)
 
 		ok, err = bs.Store(block)
@@ -52,19 +59,20 @@ var _ = Describe("BlockStore", func() {
 		val := validator.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
-		block := &Block{Type: SEND, Link: "ddddddddddddd", Previous: "ppppppppp",
-			Signature: "8d2e875bd67e70a5930c60bd7e8fed1b364aa74bd5a57df7e0bad49d55558ba9", Balance: 1,
-			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr", Timestamp: 1}
+		block := &Block{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
+			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+		block.SetHash()
 
-		dest := &Block{Type: OPEN, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr", Timestamp: 1}
+		dest := &Block{Type: OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		ms.Put("ddddddddddddd", dest)
 
 		blk, err := bs.Store(block)
 		Expect(err).To(BeNil())
 		Expect(blk).NotTo(BeNil())
 
-		blockFromKeyStore, _, _ := ms.Get(block.Signature)
+		blockFromKeyStore, _, _ := ms.Get(string(block.Hash))
 		Expect(blockFromKeyStore).To(Equal(block))
 	})
 

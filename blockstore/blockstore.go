@@ -29,7 +29,7 @@ func (bs *BlockStore) Store(block *Block) (*Block, error) {
 	if ok, err := bs.isValid(block); !ok {
 		return nil, err
 	}
-	bs.store.Put(block.Signature, block)
+	bs.store.Put(string(block.Hash), block)
 	return block, nil
 }
 

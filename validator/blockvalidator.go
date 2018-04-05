@@ -4,9 +4,9 @@ import (
 	. "github.com/msaldanha/realChain/block"
 	"errors"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"strconv"
-	"strings"
 	"crypto/sha256"
+	"encoding/binary"
+	"bytes"
 	"encoding/hex"
 )
 
@@ -61,28 +61,41 @@ func (*blockValidatorCreator) CreateValidatorForBlock(blockType BlockType, store
 }
 
 
-func (bs *BaseBlockValidator) CreateHash(block *Block) (string, error) {
-	parts := [...]string{
-		strconv.FormatInt(block.Timestamp, 10),
-		strconv.Itoa(int(block.Type)),
+func (v *BaseBlockValidator) CreateHash(block *Block) ([]byte, error) {
+	timestamp := make([]byte, 8)
+	binary.LittleEndian.PutUint64(timestamp, uint64(block.Timestamp))
+
+	ty := make([]byte, 2)
+	binary.LittleEndian.PutUint16(ty, uint16(block.Type))
+
+	var balance bytes.Buffer
+	if err := binary.Write(&balance, binary.LittleEndian, block.Balance); err != nil {
+		return nil, err
+	}
+
+	parts := [][]byte{
+		timestamp,
+		ty,
 		block.Account,
 		block.Representative,
 		block.Previous,
 		block.Link,
 		block.Work,
-		strconv.FormatFloat(block.Balance, 'f', -1, 64),
+		balance.Bytes(),
 	}
-	all := strings.Join(parts[:], "|")
-	allBytes := []byte(all)
-	sh := sha256.Sum256(allBytes)
-	return hex.EncodeToString(sh[:]), nil
+	all := bytes.Join(parts, []byte{})
+	sh := sha256.Sum256(all)
+	hex.EncodeToString(sh[:])
+	return []byte(hex.EncodeToString(sh[:])), nil
 }
 
-func (bs *BaseBlockValidator) HasValidSignature(block *Block) (bool, error) {
-	hash, _ := bs.CreateHash(block)
-	if block.Signature == hash {
+func (v *BaseBlockValidator) HasValidSignature(block *Block) (bool, error) {
+	hash, _ := v.CreateHash(block)
+	if bytes.Compare(block.Signature, hash) == 0 {
 		return true, nil
 	}
+	//text := fmt.Sprintf("%s : %s", string(block.Signature), string(hash))
+	//log.Println(text)
 	return false, errors.New("Block signature does not match")
 }
 
@@ -103,14 +116,17 @@ func (v *BaseBlockValidator) IsFilled(block *Block) (bool, error) {
 	if block.Timestamp <= 0 {
 		return false, errors.New("Invalid block timestamp")
 	}
-	if block.Previous == "" {
+	if len(block.Previous) == 0 {
 		return false, errors.New("Previous block can not be empty")
 	}
-	if block.Signature == "" {
+	if len(block.Signature) == 0 {
 		return false, errors.New("Block signature can not be empty")
 	}
-	if block.Work == "" {
+	if len(block.Work) == 0 {
 		return false, errors.New("Block PoW can not be empty")
+	}
+	if len(block.Hash) == 0 {
+		return false, errors.New("Block hash can not be empty")
 	}
 	return true, nil
 }
@@ -119,16 +135,16 @@ func (v *OpenBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != OPEN {
 		return false, errors.New("Invalid block type")
 	}
-	if block.Account == "" {
+	if len(block.Account) == 0 {
 		return false, errors.New("Block account can not be empty")
 	}
-	if block.Representative == "" {
+	if len(block.Representative) == 0 {
 		return false, errors.New("Block representative can not be empty")
 	}
-	if block.Signature == "" {
+	if len(block.Signature) == 0 {
 		return false, errors.New("Block signature can not be empty")
 	}
-	if block.Work == "" {
+	if len(block.Work) == 0 {
 		return false, errors.New("Block PoW can not be empty")
 	}
 	return true, nil
@@ -145,7 +161,7 @@ func (v *SendBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != SEND {
 		return false, errors.New("Invalid block type")
 	}
-	if block.Link == "" {
+	if len(block.Link) == 0 {
 		return false, errors.New("Block destination can not be empty")
 	}
 	return v.BaseBlockValidator.IsFilled(block)
@@ -162,7 +178,7 @@ func (v *SendBlockValidator) IsValid(block *Block) (bool, error) {
 }
 
 func (v *SendBlockValidator) HasValidDestination(block *Block) (bool, error) {
-	_, found, err := v.store.Get(block.Link)
+	_, found, err := v.store.Get(string(block.Link))
 	if err != nil {
 		return false, err
 	}
@@ -176,7 +192,7 @@ func (v *ReceiveBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != RECEIVE {
 		return false, errors.New("Invalid block type")
 	}
-	if block.Link == "" {
+	if len(block.Link) == 0 {
 		return false, errors.New("Block source can not be empty")
 	}
 	return v.BaseBlockValidator.IsFilled(block)
@@ -193,7 +209,7 @@ func (v *ReceiveBlockValidator) IsValid(block *Block) (bool, error) {
 }
 
 func (v *ReceiveBlockValidator) HasValidSource(block *Block) (bool, error) {
-	dest, found, err := v.store.Get(block.Link)
+	dest, found, err := v.store.Get(string(block.Link))
 	if err != nil {
 		return false, err
 	}
@@ -211,7 +227,7 @@ func (v *ChangeBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != CHANGE {
 		return false, errors.New("Invalid block type")
 	}
-	if block.Representative == "" {
+	if len(block.Representative) == 0 {
 		return false, errors.New("Block representative can not be empty")
 	}
 	return v.BaseBlockValidator.IsFilled(block)
