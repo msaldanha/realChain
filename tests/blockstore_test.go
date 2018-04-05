@@ -6,7 +6,6 @@ import (
 	. "github.com/msaldanha/realChain/block"
 	"github.com/msaldanha/realChain/blockstore"
 	"github.com/golang/mock/gomock"
-	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/validator"
 	"time"
 )
@@ -17,7 +16,7 @@ var _ = Describe("BlockStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := keyvaluestore.NewMemoryKeyValueStore()
+		ms := createNonEmptyMemoryStore()
 		val := validator.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 		block := &Block{}
@@ -27,7 +26,7 @@ var _ = Describe("BlockStore", func() {
 		Expect(err.Error()).To(Equal("Invalid block type"))
 
 		block = &Block{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
 
 			ok, err = bs.Store(block)
 		Expect(ok).To(BeNil())
@@ -42,7 +41,7 @@ var _ = Describe("BlockStore", func() {
 		Expect(err.Error()).To(Equal("Destination not found"))
 
 		dest := &Block{Type: OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
 		ms.Put("ddddddddddddd", dest)
 
 		ok, err = bs.Store(block)
@@ -55,17 +54,17 @@ var _ = Describe("BlockStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := keyvaluestore.NewMemoryKeyValueStore()
+		ms := createNonEmptyMemoryStore()
 		val := validator.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		block := &Block{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
-			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
-			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+			Signature: []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b"), Balance: 1,
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		block.SetHash()
 
 		dest := &Block{Type: OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		ms.Put("ddddddddddddd", dest)
 
 		blk, err := bs.Store(block)
@@ -80,37 +79,37 @@ var _ = Describe("BlockStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := keyvaluestore.NewMemoryKeyValueStore()
+		ms := createNonEmptyMemoryStore()
 		val := validator.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		block := &Block{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
-			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		block.SetHash()
 
 		nonce, pow, err := bs.CalculatePow(block)
 		Expect(err).To(BeNil())
 
-		Expect(nonce).To(Equal(int64(44416)))
-		Expect(pow).To(Equal([]byte("000082d10e5d62e38e4fd5bb109d8809e63d546cec6900f18bb0b08d842fc9a1")))
+		Expect(nonce).To(Equal(int64(33794)))
+		Expect(pow).To(Equal([]byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")))
 	})
 
 	It("Should verify the PoW for the block", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := keyvaluestore.NewMemoryKeyValueStore()
+		ms := createNonEmptyMemoryStore()
 		val := validator.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		block := &Block{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
-			Work: []byte("wwwwwwww"), Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		block.SetHash()
 
-		block.PowNonce = int64(44416)
-		block.Hash = []byte("000082d10e5d62e38e4fd5bb109d8809e63d546cec6900f18bb0b08d842fc9a1")
+		block.PowNonce = int64(33794)
+		block.Hash = []byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")
 
 		ok, err := bs.VerifyPow(block)
 		Expect(err).To(BeNil())

@@ -25,7 +25,6 @@ type Block struct {
 	Representative 	[]byte
 	Previous 		[]byte
 	Link 			[]byte
-	Work 			[]byte
 	Balance 		float64
 	Hash 			[]byte
 	Signature 		[]byte
@@ -53,14 +52,22 @@ func (bt BlockType) String() (string) {
 }
 
 func (b *Block) SetHash() (error) {
-	hashableBytes, err := b.GetHashableBytes()
+	hash, err := b.GetHash()
 	if err != nil {
 		return err
 	}
+	b.Hash = hash
+	return nil
+}
+
+func (b *Block) GetHash() ([]byte, error) {
+	hashableBytes, err := b.GetHashableBytes()
+	if err != nil {
+		return nil, err
+	}
 	headers := bytes.Join(hashableBytes, []byte{})
 	hash := sha256.Sum256(headers)
-	b.Hash = []byte(hex.EncodeToString(hash[:]))
-	return nil
+	return []byte(hex.EncodeToString(hash[:])), nil
 }
 
 func (b *Block) GetHashableBytes() ([][]byte, error) {
@@ -70,5 +77,5 @@ func (b *Block) GetHashableBytes() ([][]byte, error) {
 	}
 	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
 	return [][]byte{timestamp, b.Account, b.Representative,
-		b.Previous, b.Link, b.Work, balance.Bytes()}, nil
+		b.Previous, b.Link, balance.Bytes()}, nil
 }

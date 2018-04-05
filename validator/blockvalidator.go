@@ -4,10 +4,7 @@ import (
 	. "github.com/msaldanha/realChain/block"
 	"errors"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"crypto/sha256"
-	"encoding/binary"
 	"bytes"
-	"encoding/hex"
 )
 
 type BlockValidator interface {
@@ -60,37 +57,8 @@ func (*blockValidatorCreator) CreateValidatorForBlock(blockType BlockType, store
 	return nil
 }
 
-
-func (v *BaseBlockValidator) CreateHash(block *Block) ([]byte, error) {
-	timestamp := make([]byte, 8)
-	binary.LittleEndian.PutUint64(timestamp, uint64(block.Timestamp))
-
-	ty := make([]byte, 2)
-	binary.LittleEndian.PutUint16(ty, uint16(block.Type))
-
-	var balance bytes.Buffer
-	if err := binary.Write(&balance, binary.LittleEndian, block.Balance); err != nil {
-		return nil, err
-	}
-
-	parts := [][]byte{
-		timestamp,
-		ty,
-		block.Account,
-		block.Representative,
-		block.Previous,
-		block.Link,
-		block.Work,
-		balance.Bytes(),
-	}
-	all := bytes.Join(parts, []byte{})
-	sh := sha256.Sum256(all)
-	hex.EncodeToString(sh[:])
-	return []byte(hex.EncodeToString(sh[:])), nil
-}
-
 func (v *BaseBlockValidator) HasValidSignature(block *Block) (bool, error) {
-	hash, _ := v.CreateHash(block)
+	hash, _ := block.GetHash()
 	if bytes.Compare(block.Signature, hash) == 0 {
 		return true, nil
 	}
@@ -116,14 +84,14 @@ func (v *BaseBlockValidator) IsFilled(block *Block) (bool, error) {
 	if block.Timestamp <= 0 {
 		return false, errors.New("Invalid block timestamp")
 	}
-	if len(block.Previous) == 0 {
+	if len(block.Previous) == 0 && !v.store.IsEmpty() {
 		return false, errors.New("Previous block can not be empty")
 	}
 	if len(block.Signature) == 0 {
 		return false, errors.New("Block signature can not be empty")
 	}
-	if len(block.Work) == 0 {
-		return false, errors.New("Block PoW can not be empty")
+	if block.PowNonce == 0 {
+		return false, errors.New("Block PoW nonce can not be zero")
 	}
 	if len(block.Hash) == 0 {
 		return false, errors.New("Block hash can not be empty")
@@ -144,8 +112,8 @@ func (v *OpenBlockValidator) IsFilled(block *Block) (bool, error) {
 	if len(block.Signature) == 0 {
 		return false, errors.New("Block signature can not be empty")
 	}
-	if len(block.Work) == 0 {
-		return false, errors.New("Block PoW can not be empty")
+	if block.PowNonce == 0 {
+		return false, errors.New("Block PoW nonce can not be zero")
 	}
 	return true, nil
 }

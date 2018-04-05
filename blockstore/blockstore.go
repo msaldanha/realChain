@@ -13,6 +13,7 @@ import (
 	"encoding/binary"
 	"log"
 	"encoding/hex"
+	"time"
 )
 
 const targetBits int16 = 16
@@ -106,6 +107,14 @@ func (bs *BlockStore) VerifyPow(block *Block) (bool, error) {
 	return hashInt.Cmp(target) == -1, nil
 }
 
+func (bs *BlockStore) CreateOpenBlock() (*Block) {
+	return &Block{Type:OPEN, Timestamp: time.Now().Unix()}
+}
+
+func (bs *BlockStore) CreateSendBlock() (*Block) {
+	return &Block{Type:SEND, Timestamp: time.Now().Unix()}
+}
+
 func getTarget() (*big.Int) {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
@@ -121,3 +130,4 @@ func int64ToBytes(num int64) []byte {
 
 	return buff.Bytes()
 }
+

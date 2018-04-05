@@ -27,3 +27,7 @@ func (st *MemoryKeyValueStore) GetTip(key string) (interface{}, bool, error) {
 	}
 	return st.tip, true, nil
 }
+
+func (st *MemoryKeyValueStore) IsEmpty() (bool) {
+	return len(st.pairs) == 0
+}
