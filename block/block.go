@@ -1,5 +1,7 @@
 package block
 
+import "fmt"
+
 type BlockType int
 
 const (
@@ -23,4 +25,19 @@ type Block struct {
 
 func (bt BlockType) IsValid() (bool) {
 	return bt >= OPEN && bt <= CHANGE
+}
+
+func (bt BlockType) String() (string) {
+	name := ""
+	switch bt {
+	case OPEN:
+		name = "OPEN"
+	case SEND:
+		name = "SEND"
+	case RECEIVE:
+		name = "RECEIVE"
+	case CHANGE:
+		name = "CHANGE"
+	}
+	return fmt.Sprintf("%d(%s)", int(bt), name)
 }
