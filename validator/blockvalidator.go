@@ -63,6 +63,7 @@ func (*blockValidatorCreator) CreateValidatorForBlock(blockType BlockType, store
 
 func (bs *BaseBlockValidator) CreateHash(block *Block) (string, error) {
 	parts := [...]string{
+		strconv.FormatInt(block.Timestamp, 10),
 		strconv.Itoa(int(block.Type)),
 		block.Account,
 		block.Representative,
@@ -98,6 +99,9 @@ func (v *BaseBlockValidator) IsValid(block *Block) (bool, error) {
 func (v *BaseBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() {
 		return false, errors.New("Invalid block type")
+	}
+	if block.Timestamp <= 0 {
+		return false, errors.New("Invalid block timestamp")
 	}
 	if block.Previous == "" {
 		return false, errors.New("Previous block can not be empty")

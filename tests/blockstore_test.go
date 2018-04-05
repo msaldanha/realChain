@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/validator"
+	"time"
 )
 
 var _ = Describe("BlockStore", func() {
@@ -26,7 +27,7 @@ var _ = Describe("BlockStore", func() {
 		Expect(err.Error()).To(Equal("Invalid block type"))
 
 		block = &Block{Type: SEND, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr"}
+			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr", Timestamp: time.Now().Unix()}
 
 		ok, err = bs.Store(block)
 		Expect(ok).To(BeNil())
@@ -34,7 +35,7 @@ var _ = Describe("BlockStore", func() {
 		Expect(err.Error()).To(Equal("Destination not found"))
 
 		dest := &Block{Type: OPEN, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr"}
+			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr", Timestamp: time.Now().Unix()}
 		ms.Put("ddddddddddddd", dest)
 
 		ok, err = bs.Store(block)
@@ -43,7 +44,7 @@ var _ = Describe("BlockStore", func() {
 		Expect(err.Error()).To(Equal("Block signature does not match"))
 	})
 
-	It("Should accept propely filled block", func() {
+	It("Should accept properly filled block", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
@@ -52,11 +53,11 @@ var _ = Describe("BlockStore", func() {
 		bs := blockstore.New(ms, val)
 
 		block := &Block{Type: SEND, Link: "ddddddddddddd", Previous: "ppppppppp",
-			Signature: "58853e3f4f22032c976b5569160043b04a0a0fc020d99a1a82a11051cf0598eb", Balance: 1,
-			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr"}
+			Signature: "8d2e875bd67e70a5930c60bd7e8fed1b364aa74bd5a57df7e0bad49d55558ba9", Balance: 1,
+			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr", Timestamp: 1}
 
 		dest := &Block{Type: OPEN, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr"}
+			Work: "wwwwwwww", Account: "aaaaaaaaaa", Representative: "rrrrrrrrrrrrrrr", Timestamp: 1}
 		ms.Put("ddddddddddddd", dest)
 
 		blk, err := bs.Store(block)

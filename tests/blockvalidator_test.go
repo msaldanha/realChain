@@ -7,11 +7,19 @@ import (
 	. "github.com/msaldanha/realChain/block"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/validator"
+	"time"
 )
 
 
 func assertCommonVal(val validator.BlockValidator, block *Block) {
 	ok, err := val.IsFilled(block)
+	Expect(ok).To(BeFalse())
+	Expect(err).NotTo(BeNil())
+	Expect(err.Error()).To(Equal("Invalid block timestamp"))
+
+	block.Timestamp = time.Now().Unix()
+
+	ok, err = val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
 	Expect(err.Error()).To(Equal("Previous block can not be empty"))
@@ -168,7 +176,7 @@ var _ = Describe("BlockValidator", func() {
 		ms := keyvaluestore.NewMemoryKeyValueStore()
 		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(OPEN, ms)
 		block := &Block{Type: OPEN, Link: "ddddddddddddd", Previous: "ppppppppp",
-		Signature: "ssssssss", Balance: 1,
+		Signature: "ssssssss", Balance: 1, Timestamp: 1,
 			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr"}
 
 		ok, err := val.IsValid(block)
@@ -176,11 +184,11 @@ var _ = Describe("BlockValidator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block signature does not match"))
 
-		block.Signature = "d8ab2722a816681533a434728f0bd9810e9e0827a4357d25b6c1d8a6efb12379"
+		block.Signature = "e0f7b968d899426dd4372b507374e27de643d20588e0a40875d1a0cc4350e431"
 
 		ok, err = val.IsValid(block)
-		Expect(ok).To(BeTrue())
 		Expect(err).To(BeNil())
+		Expect(ok).To(BeTrue())
 	})
 
 	It("Should not accept SEND block with invalid fields", func() {
@@ -190,7 +198,7 @@ var _ = Describe("BlockValidator", func() {
 		ms := keyvaluestore.NewMemoryKeyValueStore()
 		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(SEND, ms)
 		block := &Block{Type: SEND, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr"}
+			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr", Timestamp: 1}
 
 		ok, err := val.IsValid(block)
 		Expect(ok).To(BeFalse())
@@ -198,7 +206,7 @@ var _ = Describe("BlockValidator", func() {
 		Expect(err.Error()).To(Equal("Destination not found"))
 
 		dest := &Block{Type: OPEN, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr"}
+			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr", Timestamp: 1}
 		ms.Put("ddddddddddddd", dest)
 
 		ok, err = val.IsValid(block)
@@ -206,7 +214,7 @@ var _ = Describe("BlockValidator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block signature does not match"))
 
-		block.Signature = "58853e3f4f22032c976b5569160043b04a0a0fc020d99a1a82a11051cf0598eb"
+		block.Signature = "8d2e875bd67e70a5930c60bd7e8fed1b364aa74bd5a57df7e0bad49d55558ba9"
 
 		ok, err = val.IsValid(block)
 		Expect(err).To(BeNil())
@@ -221,7 +229,7 @@ var _ = Describe("BlockValidator", func() {
 		ms := keyvaluestore.NewMemoryKeyValueStore()
 		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(RECEIVE, ms)
 		block := &Block{Type: RECEIVE, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr"}
+			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr", Timestamp: 1}
 
 		ok, err := val.IsValid(block)
 		Expect(ok).To(BeFalse())
@@ -229,7 +237,7 @@ var _ = Describe("BlockValidator", func() {
 		Expect(err.Error()).To(Equal("Source not found"))
 
 		source := &Block{Type: OPEN, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr"}
+			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr", Timestamp: 1}
 		ms.Put("ddddddddddddd", source)
 
 		ok, err = val.IsValid(block)
@@ -244,7 +252,7 @@ var _ = Describe("BlockValidator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block signature does not match"))
 
-		block.Signature = "33539bf26a3be64bf19ba4f62c850c3dd0a1d70072c9fccd3b1b8e9441cb00c9"
+		block.Signature = "df8c4b90098e7d69aa3623a5b8aa646d25f23634b1013a8cd5b131d9b86dfce0"
 
 		ok, err = val.IsValid(block)
 		Expect(err).To(BeNil())
@@ -258,14 +266,14 @@ var _ = Describe("BlockValidator", func() {
 		ms := keyvaluestore.NewMemoryKeyValueStore()
 		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(CHANGE, ms)
 		block := &Block{Type: CHANGE, Link: "ddddddddddddd", Previous: "ppppppppp", Signature: "ssssssss", Balance: 1,
-			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr"}
+			Work: "wwwwwwww", Account:"aaaaaaaaaa", Representative:"rrrrrrrrrrrrrrr", Timestamp: 1}
 
 		ok, err := val.IsValid(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block signature does not match"))
 
-		block.Signature = "76f4d115e9ab6870f70aa54850dbd46d01f3901edd384944f4a7ad1db7ec6550"
+		block.Signature = "e38dc06416c781dd6c627c03a44ad954073a15a91d6e51a56f292a02e48fd449"
 
 		ok, err = val.IsValid(block)
 		Expect(err).To(BeNil())
