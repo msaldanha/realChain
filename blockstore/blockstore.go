@@ -45,19 +45,11 @@ func (bs *BlockStore) Store(block *Block) (*Block, error) {
 }
 
 func (bs *BlockStore) Retrieve(hash string) (*Block, error) {
-	value, found, err := bs.store.Get(hash)
+	value, _, err := bs.store.Get(hash)
 	if err != nil {
 		return nil, err
 	}
-
-	if found {
-		if blk, ok := value.(*Block); ok {
-			return blk, nil
-		}
-		return nil, errors.New("Not a block")
-	}
-
-	return nil, nil
+	return value, nil
 }
 
 func (bs *BlockStore) CalculatePow(block *Block) (int64, []byte, error) {

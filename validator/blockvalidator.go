@@ -184,7 +184,7 @@ func (v *ReceiveBlockValidator) HasValidSource(block *Block) (bool, error) {
 	if !found {
 		return false, errors.New("Source not found")
 	}
-	source := dest.(*Block)
+	source := dest
 	if source.Type != SEND {
 		return false, errors.New("Source of invalid type")
 	}
