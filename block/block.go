@@ -3,7 +3,7 @@ package block
 type BlockType int
 
 const (
-	OPEN BlockType = 1 << iota
+	OPEN BlockType = 1 + iota
 	SEND
 	RECEIVE
 	CHANGE
@@ -14,10 +14,10 @@ type Block struct {
 	Account string
 	Representative string
 	Previous string
-	Source string
-	Destination string
+	Link string
 	Work string
 	Balance float64
+	Hash string
 	Signature string
 }
 

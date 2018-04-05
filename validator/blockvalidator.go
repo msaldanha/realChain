@@ -67,8 +67,7 @@ func (bs *BaseBlockValidator) CreateHash(block *Block) (string, error) {
 		block.Account,
 		block.Representative,
 		block.Previous,
-		block.Source,
-		block.Destination,
+		block.Link,
 		block.Work,
 		strconv.FormatFloat(block.Balance, 'f', -1, 64),
 	}
@@ -84,33 +83,6 @@ func (bs *BaseBlockValidator) HasValidSignature(block *Block) (bool, error) {
 		return true, nil
 	}
 	return false, errors.New("Block signature does not match")
-}
-
-
-func (bs *BaseBlockValidator) HasValidDestination(block *Block) (bool, error) {
-	_, found, err := bs.store.Get(block.Destination)
-	if err != nil {
-		return false, err
-	}
-	if !found {
-		return false, errors.New("Destination not found")
-	}
-	return found, err
-}
-
-func (bs *BaseBlockValidator) HasValidSource(block *Block) (bool, error) {
-	dest, found, err := bs.store.Get(block.Source)
-	if err != nil {
-		return false, err
-	}
-	if !found {
-		return false, errors.New("Source not found")
-	}
-	source := dest.(*Block)
-	if source.Type != SEND {
-		return false, errors.New("Source of invalid type")
-	}
-	return true, nil
 }
 
 func (v *BaseBlockValidator) IsValid(block *Block) (bool, error) {
@@ -149,9 +121,6 @@ func (v *OpenBlockValidator) IsFilled(block *Block) (bool, error) {
 	if block.Representative == "" {
 		return false, errors.New("Block representative can not be empty")
 	}
-	if block.Source == "" {
-		return false, errors.New("Block source can not be empty")
-	}
 	if block.Signature == "" {
 		return false, errors.New("Block signature can not be empty")
 	}
@@ -165,9 +134,6 @@ func (v *OpenBlockValidator) IsValid(block *Block) (bool, error) {
 	if ok, err := v.IsFilled(block); !ok {
 		return ok, err
 	}
-	if ok, err := v.HasValidSource(block); !ok {
-		return ok, err
-	}
 	return v.BaseBlockValidator.IsValid(block)
 }
 
@@ -175,7 +141,7 @@ func (v *SendBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != SEND {
 		return false, errors.New("Invalid block type")
 	}
-	if block.Destination == "" {
+	if block.Link == "" {
 		return false, errors.New("Block destination can not be empty")
 	}
 	return v.BaseBlockValidator.IsFilled(block)
@@ -191,11 +157,22 @@ func (v *SendBlockValidator) IsValid(block *Block) (bool, error) {
 	return v.BaseBlockValidator.IsValid(block)
 }
 
+func (v *SendBlockValidator) HasValidDestination(block *Block) (bool, error) {
+	_, found, err := v.store.Get(block.Link)
+	if err != nil {
+		return false, err
+	}
+	if !found {
+		return false, errors.New("Destination not found")
+	}
+	return found, err
+}
+
 func (v *ReceiveBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != RECEIVE {
 		return false, errors.New("Invalid block type")
 	}
-	if block.Source == "" {
+	if block.Link == "" {
 		return false, errors.New("Block source can not be empty")
 	}
 	return v.BaseBlockValidator.IsFilled(block)
@@ -209,6 +186,21 @@ func (v *ReceiveBlockValidator) IsValid(block *Block) (bool, error) {
 		return ok, err
 	}
 	return v.BaseBlockValidator.IsValid(block)
+}
+
+func (v *ReceiveBlockValidator) HasValidSource(block *Block) (bool, error) {
+	dest, found, err := v.store.Get(block.Link)
+	if err != nil {
+		return false, err
+	}
+	if !found {
+		return false, errors.New("Source not found")
+	}
+	source := dest.(*Block)
+	if source.Type != SEND {
+		return false, errors.New("Source of invalid type")
+	}
+	return true, nil
 }
 
 func (v *ChangeBlockValidator) IsFilled(block *Block) (bool, error) {
