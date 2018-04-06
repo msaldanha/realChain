@@ -135,16 +135,6 @@ func (v *SendBlockValidator) IsFilled(block *Block) (bool, error) {
 	return v.BaseBlockValidator.IsFilled(block)
 }
 
-func (v *SendBlockValidator) IsValid(block *Block) (bool, error) {
-	if ok, err := v.IsFilled(block); !ok {
-		return ok, err
-	}
-	if ok, err := v.HasValidDestination(block); !ok {
-		return ok, err
-	}
-	return v.BaseBlockValidator.IsValid(block)
-}
-
 func (v *SendBlockValidator) HasValidDestination(block *Block) (bool, error) {
 	_, found, err := v.store.Get(string(block.Link))
 	if err != nil {

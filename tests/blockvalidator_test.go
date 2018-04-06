@@ -168,15 +168,6 @@ var _ = Describe("BlockValidator", func() {
 		ok, err := val.IsValid(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Destination not found"))
-
-		dest := &Block{Type: OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		ms.Put("ddddddddddddd", dest)
-
-		ok, err = val.IsValid(block)
-		Expect(ok).To(BeFalse())
-		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block signature does not match"))
 
 		block.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")

@@ -45,6 +45,58 @@ func (ld *Ledge) Initialize(initialBalance float64) (*block.Block, error) {
 	return blk, nil
 }
 
+func (ld *Ledge) Send(from, to string, amount float64) (string, error) {
+	fromTipBlk, err := ld.bs.Retrieve(from)
+
+	if err != nil {
+		return "", err
+	}
+
+	if fromTipBlk == nil {
+		return "", errors.New("from account not found")
+	}
+
+	if fromTipBlk.Balance < amount {
+		return "", errors.New("not enough funds")
+	}
+
+	hash, err := ld.createSendTransaction(fromTipBlk, []byte(to), amount)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hash), nil
+}
+
+func (ld *Ledge) createSendTransaction(fromTip *block.Block, to []byte, amount float64) ([]byte, error) {
+	send := ld.bs.CreateSendBlock()
+	send.Link = to
+	send.Previous = fromTip.Hash
+	send.Balance = fromTip.Balance - amount
+	if err := ld.signAndPow(send); err != nil {
+		return nil, err
+	}
+	send, err := ld.bs.Store(send)
+	if err != nil {
+		return nil, err
+	}
+	return send.Hash, nil
+}
+
+func (ld *Ledge) signAndPow(blk *block.Block) (error) {
+	err := ld.setPow(blk)
+	if err != nil {
+		return err
+	}
+
+	err = ld.sign(blk)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (ld *Ledge) CreateAccount() []byte {
 	return []byte("account")
 }

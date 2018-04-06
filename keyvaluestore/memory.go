@@ -33,3 +33,7 @@ func (st *MemoryKeyValueStore) GetTip(key string) (*block.Block, bool, error) {
 func (st *MemoryKeyValueStore) IsEmpty() (bool) {
 	return len(st.pairs) == 0
 }
+
+func (st *MemoryKeyValueStore) Size() (int) {
+	return len(st.pairs)
+}

@@ -41,6 +41,7 @@ func (bs *BlockStore) Store(block *Block) (*Block, error) {
 		return nil, err
 	}
 	bs.store.Put(string(block.Hash), block)
+	bs.store.Put(string(block.Account), block)
 	return block, nil
 }
 

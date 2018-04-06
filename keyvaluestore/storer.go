@@ -7,4 +7,5 @@ type Storer interface {
 	Get(key string) (*block.Block, bool, error)
 	GetTip(key string) (*block.Block, bool, error)
 	IsEmpty() (bool)
+	Size() (int)
 }

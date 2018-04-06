@@ -35,11 +35,6 @@ var _ = Describe("BlockStore", func() {
 
 		block.SetHash()
 
-		ok, err = bs.Store(block)
-		Expect(ok).To(BeNil())
-		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Destination not found"))
-
 		dest := &Block{Type: OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
 		ms.Put("ddddddddddddd", dest)
