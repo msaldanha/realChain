@@ -6,6 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/msaldanha/realChain/block"
 	"github.com/msaldanha/realChain/validator"
+	"time"
 )
 
 var _ = Describe("BlockValidator", func() {
@@ -27,6 +28,13 @@ var _ = Describe("BlockValidator", func() {
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(Equal("Invalid block timestamp"))
+
+		block.Timestamp = time.Now().Unix()
+
+		ok, err = val.IsFilled(block)
+		Expect(ok).To(BeFalse())
+		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block account can not be empty"))
 
 		block.Account = []byte("xxxxxxxxxxxxxxxxxxx")
@@ -34,9 +42,9 @@ var _ = Describe("BlockValidator", func() {
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block representative can not be empty"))
+		Expect(err.Error()).To(Equal("Previous block can not be empty"))
 
-		block.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
+		block.Previous = []byte("xxxxxxxxxxxxxxxxxxx")
 
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
@@ -51,6 +59,20 @@ var _ = Describe("BlockValidator", func() {
 		Expect(err.Error()).To(Equal("Block PoW nonce can not be zero"))
 
 		block.PowNonce = 1
+
+		ok, err = val.IsFilled(block)
+		Expect(ok).To(BeFalse())
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(Equal("Block hash can not be empty"))
+
+		block.Hash = []byte("xxxxxxxxxxxxxxxxxxx")
+
+		ok, err = val.IsFilled(block)
+		Expect(ok).To(BeFalse())
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(Equal("Block representative can not be empty"))
+
+		block.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
 
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeTrue())
@@ -72,14 +94,14 @@ var _ = Describe("BlockValidator", func() {
 
 		block.Type = SEND
 
+		assertCommonVal(val, block)
+
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block destination can not be empty"))
 
 		block.Link = []byte("xxxxxxxxxxxxxxxxxxx")
-
-		assertCommonVal(val, block)
 	})
 
 	It("Should not accept empty/partial filled block for RECEIVE type", func() {
@@ -97,14 +119,14 @@ var _ = Describe("BlockValidator", func() {
 
 		block.Type = RECEIVE
 
+		assertCommonVal(val, block)
+
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block source can not be empty"))
 
 		block.Link = []byte("xxxxxxxxxxxxxxxxxxx")
-
-		assertCommonVal(val, block)
 	})
 
 	It("Should not accept empty/partial filled block for CHANGE type", func() {
@@ -122,14 +144,14 @@ var _ = Describe("BlockValidator", func() {
 
 		block.Type = CHANGE
 
+		assertCommonVal(val, block)
+
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block representative can not be empty"))
 
 		block.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
-
-		assertCommonVal(val, block)
 	})
 
 	It("Should not accept OPEN block with invalid fields", func() {

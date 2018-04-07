@@ -19,6 +19,13 @@ func assertCommonVal(val validator.BlockValidator, block *Block) {
 	ok, err = val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
+	Expect(err.Error()).To(Equal("Block account can not be empty"))
+
+	block.Account = []byte("xxxxxxxxxxxxxxxxxxx")
+
+	ok, err = val.IsFilled(block)
+	Expect(ok).To(BeFalse())
+	Expect(err).NotTo(BeNil())
 	Expect(err.Error()).To(Equal("Previous block can not be empty"))
 
 	block.Previous = []byte("yyyyyyyyyyyyyyyyyyyy")
@@ -43,10 +50,6 @@ func assertCommonVal(val validator.BlockValidator, block *Block) {
 	Expect(err.Error()).To(Equal("Block hash can not be empty"))
 
 	block.SetHash()
-
-	ok, err = val.IsFilled(block)
-	Expect(err).To(BeNil())
-	Expect(ok).To(BeTrue())
 }
 
 func createNonEmptyMemoryStore() *keyvaluestore.MemoryKeyValueStore {

@@ -84,6 +84,9 @@ func (v *BaseBlockValidator) IsFilled(block *Block) (bool, error) {
 	if block.Timestamp <= 0 {
 		return false, errors.New("Invalid block timestamp")
 	}
+	if len(block.Account) == 0 {
+		return false, errors.New("Block account can not be empty")
+	}
 	if len(block.Previous) == 0 && !v.store.IsEmpty() {
 		return false, errors.New("Previous block can not be empty")
 	}
@@ -103,8 +106,8 @@ func (v *OpenBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != OPEN {
 		return false, errors.New("Invalid block type")
 	}
-	if len(block.Account) == 0 {
-		return false, errors.New("Block account can not be empty")
+	if ok, err := v.BaseBlockValidator.IsFilled(block); !ok {
+		return ok, err
 	}
 	if len(block.Representative) == 0 {
 		return false, errors.New("Block representative can not be empty")
@@ -129,6 +132,9 @@ func (v *SendBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != SEND {
 		return false, errors.New("Invalid block type")
 	}
+	if ok, err := v.BaseBlockValidator.IsFilled(block); !ok {
+		return ok, err
+	}
 	if len(block.Link) == 0 {
 		return false, errors.New("Block destination can not be empty")
 	}
@@ -149,6 +155,9 @@ func (v *SendBlockValidator) HasValidDestination(block *Block) (bool, error) {
 func (v *ReceiveBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != RECEIVE {
 		return false, errors.New("Invalid block type")
+	}
+	if ok, err := v.BaseBlockValidator.IsFilled(block); !ok {
+		return ok, err
 	}
 	if len(block.Link) == 0 {
 		return false, errors.New("Block source can not be empty")
@@ -184,6 +193,9 @@ func (v *ReceiveBlockValidator) HasValidSource(block *Block) (bool, error) {
 func (v *ChangeBlockValidator) IsFilled(block *Block) (bool, error) {
 	if !block.Type.IsValid() || block.Type != CHANGE {
 		return false, errors.New("Invalid block type")
+	}
+	if ok, err := v.BaseBlockValidator.IsFilled(block); !ok {
+		return ok, err
 	}
 	if len(block.Representative) == 0 {
 		return false, errors.New("Block representative can not be empty")

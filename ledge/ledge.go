@@ -20,7 +20,6 @@ func (ld *Ledge) Use(bs *blockstore.BlockStore) {
 
 func (ld *Ledge) Initialize(initialBalance float64) (*block.Block, error) {
 	genesisBlock := ld.bs.CreateOpenBlock()
-	genesisBlock.Link = []byte("Genesis")
 	genesisBlock.Account = ld.CreateAccount()
 	genesisBlock.Representative = genesisBlock.Account
 	genesisBlock.Balance = initialBalance
@@ -70,6 +69,7 @@ func (ld *Ledge) Send(from, to string, amount float64) (string, error) {
 
 func (ld *Ledge) createSendTransaction(fromTip *block.Block, to []byte, amount float64) ([]byte, error) {
 	send := ld.bs.CreateSendBlock()
+	send.Account = ld.GetAccount()
 	send.Link = to
 	send.Previous = fromTip.Hash
 	send.Balance = fromTip.Balance - amount
@@ -98,6 +98,10 @@ func (ld *Ledge) signAndPow(blk *block.Block) (error) {
 }
 
 func (ld *Ledge) CreateAccount() []byte {
+	return []byte("account")
+}
+
+func (ld *Ledge) GetAccount() []byte {
 	return []byte("account")
 }
 
