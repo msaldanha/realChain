@@ -108,6 +108,22 @@ func (bs *BlockStore) CreateSendBlock() (*Block) {
 	return &Block{Type:SEND, Timestamp: time.Now().Unix()}
 }
 
+func (bs *BlockStore) GetBlockChain(blockHash string) ([]*Block, error) {
+	blk, ok, _ := bs.store.Get(blockHash)
+	chain := []*Block{}
+	for ok {
+		chain = append(chain[:0], append([]*Block{blk}, chain[0:]...)...)
+		if len(blk.Previous) > 0 {
+			blk, ok, _ = bs.store.Get(string(blk.Previous))
+		} else if blk.Type == OPEN && len(blk.Link) > 0 {
+			blk, ok, _ = bs.store.Get(string(blk.Link))
+		} else {
+			break
+		}
+	}
+	return chain, nil
+}
+
 func getTarget() (*big.Int) {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
