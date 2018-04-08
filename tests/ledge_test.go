@@ -8,6 +8,7 @@ import (
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/validator"
 	"github.com/msaldanha/realChain/ledge"
+	"github.com/msaldanha/realChain/block"
 )
 
 var _ = Describe("Ledge", func() {
@@ -106,4 +107,102 @@ var _ = Describe("Ledge", func() {
 
 		Expect(blk.Balance).To(Equal(float64(1000)))
 	})
+
+	It("Should receive funds", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ms := keyvaluestore.NewMemoryKeyValueStore()
+		val := validator.NewBlockValidatorCreator()
+		bs := blockstore.New(ms, val)
+
+		ld := ledge.New()
+		ld.Use(bs)
+
+		blk, err := ld.Initialize(1000)
+		Expect(err).To(BeNil())
+
+		receiveAcc := []byte("acc1")
+
+		ld.AddAccount(receiveAcc)
+
+		blk, err = bs.Retrieve(string(blk.Hash))
+		Expect(err).To(BeNil())
+		Expect(blk).NotTo(BeNil())
+
+		hash, err := ld.Send(string(blk.Account), string(receiveAcc), 400)
+		Expect(err).To(BeNil())
+
+		sendBlk, err := bs.Retrieve(hash)
+		Expect(err).To(BeNil())
+		Expect(sendBlk).NotTo(BeNil())
+
+		Expect(sendBlk.Balance).To(Equal(float64(600)))
+
+		hash, err = ld.Receive(sendBlk)
+		Expect(err).To(BeNil())
+
+
+		blockChain, err := bs.GetBlockChain(hash)
+		Expect(err).To(BeNil())
+		Expect(len(blockChain)).To(Equal(3))
+
+		Expect(blockChain[2].Type).To(Equal(block.OPEN))
+		Expect(blockChain[2].Balance).To(Equal(float64(400)))
+	})
+
+	It("Should produce a correct blockchain", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ms := keyvaluestore.NewMemoryKeyValueStore()
+		val := validator.NewBlockValidatorCreator()
+		bs := blockstore.New(ms, val)
+
+		ld := ledge.New()
+		ld.Use(bs)
+
+		blk, err := ld.Initialize(1000)
+		Expect(err).To(BeNil())
+
+		receiveAcc := []byte("acc1")
+
+		ld.AddAccount(receiveAcc)
+
+		blk, err = bs.Retrieve(string(blk.Hash))
+		Expect(err).To(BeNil())
+		Expect(blk).NotTo(BeNil())
+
+		var sendHash, receiveHash string
+		for x := 1; x <= 10; x++ {
+			sendHash, receiveHash = sendFunds(ld, bs, blk,receiveAcc, 100)
+		}
+
+		blockChain, err := bs.GetBlockChain(sendHash)
+		dumpBlockChain(blockChain)
+		Expect(err).To(BeNil())
+		Expect(len(blockChain)).To(Equal(11))
+		Expect(blockChain[10].Type).To(Equal(block.SEND))
+		Expect(blockChain[10].Balance).To(Equal(float64(0)))
+
+		blockChain, err = bs.GetBlockChain(receiveHash)
+		dumpBlockChain(blockChain)
+		Expect(err).To(BeNil())
+		Expect(len(blockChain)).To(Equal(12))
+		Expect(blockChain[11].Type).To(Equal(block.RECEIVE))
+		Expect(blockChain[11].Balance).To(Equal(float64(1000)))
+	})
 })
+
+func sendFunds(ld *ledge.Ledge, bs *blockstore.BlockStore, blk *block.Block, receiveAcc []byte, amount float64) (string, string) {
+	sendHash, err := ld.Send(string(blk.Account), string(receiveAcc), amount)
+	Expect(err).To(BeNil())
+	sendBlk, err := bs.Retrieve(sendHash)
+	Expect(err).To(BeNil())
+	Expect(sendBlk).NotTo(BeNil())
+
+	receiveHash, err := ld.Receive(sendBlk)
+	Expect(err).To(BeNil())
+
+	return sendHash, receiveHash
+}

@@ -87,7 +87,7 @@ func (v *BaseBlockValidator) IsFilled(block *Block) (bool, error) {
 	if len(block.Account) == 0 {
 		return false, errors.New("Block account can not be empty")
 	}
-	if len(block.Previous) == 0 && !v.store.IsEmpty() {
+	if len(block.Previous) == 0 && !v.store.IsEmpty() && block.Type != OPEN {
 		return false, errors.New("Previous block can not be empty")
 	}
 	if len(block.Signature) == 0 {
@@ -108,6 +108,9 @@ func (v *OpenBlockValidator) IsFilled(block *Block) (bool, error) {
 	}
 	if ok, err := v.BaseBlockValidator.IsFilled(block); !ok {
 		return ok, err
+	}
+	if len(block.Link) == 0 && !v.store.IsEmpty() {
+		return false, errors.New("Block link can not be empty")
 	}
 	if len(block.Representative) == 0 {
 		return false, errors.New("Block representative can not be empty")
@@ -136,7 +139,7 @@ func (v *SendBlockValidator) IsFilled(block *Block) (bool, error) {
 		return ok, err
 	}
 	if len(block.Link) == 0 {
-		return false, errors.New("Block destination can not be empty")
+		return false, errors.New("Block link can not be empty")
 	}
 	return v.BaseBlockValidator.IsFilled(block)
 }

@@ -68,7 +68,6 @@ func (bs *BlockStore) CalculatePow(block *Block) (int64, []byte, error) {
 	for nonce < math.MaxInt64 {
 		dataWithNonce := append(data, int64ToBytes(nonce))
 		hash = sha256.Sum256(bytes.Join(dataWithNonce, []byte{}))
-		//fmt.Printf("\r%x", hash)
 		hashInt.SetBytes(hash[:])
 
 		if hashInt.Cmp(target) == -1 {
@@ -108,6 +107,10 @@ func (bs *BlockStore) CreateSendBlock() (*Block) {
 	return &Block{Type:SEND, Timestamp: time.Now().Unix()}
 }
 
+func (bs *BlockStore) CreateReceiveBlock() (*Block) {
+	return &Block{Type:RECEIVE, Timestamp: time.Now().Unix()}
+}
+
 func (bs *BlockStore) GetBlockChain(blockHash string) ([]*Block, error) {
 	blk, ok, _ := bs.store.Get(blockHash)
 	chain := []*Block{}
@@ -122,6 +125,10 @@ func (bs *BlockStore) GetBlockChain(blockHash string) ([]*Block, error) {
 		}
 	}
 	return chain, nil
+}
+
+func (bs *BlockStore) IsEmpty() (bool) {
+	return bs.store.IsEmpty()
 }
 
 func getTarget() (*big.Int) {

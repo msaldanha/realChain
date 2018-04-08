@@ -42,13 +42,6 @@ var _ = Describe("BlockValidator", func() {
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Previous block can not be empty"))
-
-		block.Previous = []byte("xxxxxxxxxxxxxxxxxxx")
-
-		ok, err = val.IsFilled(block)
-		Expect(ok).To(BeFalse())
-		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("Block signature can not be empty"))
 
 		block.Signature = []byte("ssssssssssssssssssssss")
@@ -66,6 +59,13 @@ var _ = Describe("BlockValidator", func() {
 		Expect(err.Error()).To(Equal("Block hash can not be empty"))
 
 		block.Hash = []byte("xxxxxxxxxxxxxxxxxxx")
+
+		ok, err = val.IsFilled(block)
+		Expect(ok).To(BeFalse())
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(Equal("Block link can not be empty"))
+
+		block.Link = []byte("xxxxxxxxxxxxxxxxxxx")
 
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
@@ -99,7 +99,7 @@ var _ = Describe("BlockValidator", func() {
 		ok, err = val.IsFilled(block)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block destination can not be empty"))
+		Expect(err.Error()).To(Equal("Block link can not be empty"))
 
 		block.Link = []byte("xxxxxxxxxxxxxxxxxxx")
 	})
