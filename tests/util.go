@@ -8,6 +8,9 @@ import (
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"fmt"
 	"strings"
+	"github.com/msaldanha/realChain/keypair"
+	"github.com/msaldanha/realChain/address"
+	"github.com/msaldanha/realChain/ledge"
 )
 
 func assertCommonVal(val validator.BlockValidator, block *Block) {
@@ -70,4 +73,13 @@ func dumpBlockChain(blockChain []*Block) {
 		fmt.Printf("%s %s %s %s %f\n", strings.Repeat("  ", level), v.Type, string(v.Account), string(v.Hash), v.Balance)
 	}
 	fmt.Println("============= End =================")
+}
+
+func createTestAccount() *ledge.Account {
+	keys, _ := keypair.New()
+	acc := &ledge.Account{Keys: keys}
+	addr := address.New()
+	ad, _ := addr.GenerateForKey(acc.Keys.PublicKey)
+	acc.Address = string(ad)
+	return acc
 }

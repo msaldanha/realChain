@@ -122,7 +122,7 @@ var _ = Describe("Ledge", func() {
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := []byte("acc1")
+		receiveAcc := createTestAccount()
 
 		ld.AddAccount(receiveAcc)
 
@@ -130,7 +130,7 @@ var _ = Describe("Ledge", func() {
 		Expect(err).To(BeNil())
 		Expect(blk).NotTo(BeNil())
 
-		hash, err := ld.Send(string(blk.Account), string(receiveAcc), 400)
+		hash, err := ld.Send(string(blk.Account), receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
 		sendBlk, err := bs.Retrieve(hash)
@@ -165,7 +165,7 @@ var _ = Describe("Ledge", func() {
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := []byte("acc1")
+		receiveAcc := createTestAccount()
 
 		ld.AddAccount(receiveAcc)
 
@@ -175,7 +175,7 @@ var _ = Describe("Ledge", func() {
 
 		var sendHash, receiveHash string
 		for x := 1; x <= 10; x++ {
-			sendHash, receiveHash = sendFunds(ld, bs, blk,receiveAcc, 100)
+			sendHash, receiveHash = sendFunds(ld, bs, blk,receiveAcc.Address, 100)
 		}
 
 		blockChain, err := bs.GetBlockChain(sendHash)
@@ -194,8 +194,8 @@ var _ = Describe("Ledge", func() {
 	})
 })
 
-func sendFunds(ld *ledge.Ledge, bs *blockstore.BlockStore, blk *block.Block, receiveAcc []byte, amount float64) (string, string) {
-	sendHash, err := ld.Send(string(blk.Account), string(receiveAcc), amount)
+func sendFunds(ld *ledge.Ledge, bs *blockstore.BlockStore, blk *block.Block, receiveAcc string, amount float64) (string, string) {
+	sendHash, err := ld.Send(string(blk.Account), receiveAcc, amount)
 	Expect(err).To(BeNil())
 	sendBlk, err := bs.Retrieve(sendHash)
 	Expect(err).To(BeNil())

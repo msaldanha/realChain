@@ -4,15 +4,17 @@ import (
 	"github.com/msaldanha/realChain/blockstore"
 	"github.com/msaldanha/realChain/block"
 	"errors"
+	"github.com/msaldanha/realChain/keypair"
+	"github.com/msaldanha/realChain/address"
 )
 
 type Ledge struct {
 	bs *blockstore.BlockStore
-	accounts map[string][]byte
+	accounts map[string]*Account
 }
 
 func New() (*Ledge) {
-	return &Ledge{accounts: make(map[string][]byte, 0)}
+	return &Ledge{accounts: make(map[string]*Account, 0)}
 }
 
 func (ld *Ledge) Use(bs *blockstore.BlockStore) {
@@ -25,11 +27,15 @@ func (ld *Ledge) Initialize(initialBalance float64) (*block.Block, error) {
 	}
 
 	genesisBlock := ld.bs.CreateOpenBlock()
-	genesisBlock.Account = ld.CreateAccount()
+	acc, err := ld.CreateAccount()
+	if err != nil {
+		return nil, err
+	}
+	genesisBlock.Account = []byte(acc)
 	genesisBlock.Representative = genesisBlock.Account
 	genesisBlock.Balance = initialBalance
 
-	err := ld.setPow(genesisBlock)
+	err = ld.setPow(genesisBlock)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +103,7 @@ func (ld *Ledge) Receive(send *block.Block) (string, error) {
 
 func (ld *Ledge) createSendTransaction(fromTip *block.Block, to []byte, amount float64) ([]byte, error) {
 	send := ld.bs.CreateSendBlock()
-	send.Account = ld.GetDefaultAccount()
+	send.Account = fromTip.Account
 	send.Link = to
 	send.Previous = fromTip.Hash
 	send.Balance = fromTip.Balance - amount
@@ -122,6 +128,16 @@ func (ld *Ledge) createReceiveTransaction(send *block.Block) ([]byte, error) {
 		return nil, errors.New("invalid account balance")
 	}
 
+	addr := address.New()
+	if valid, err := addr.IsValid(string(send.Link)); !valid {
+		return nil, errors.New("send transaction addr is not valid: " + err.Error())
+	}
+
+	acc := ld.GetAccount(send.Link)
+	if acc == nil {
+		return nil, errors.New("account not managed by this ledge")
+	}
+
 	receiveTip, err := ld.bs.Retrieve(string(send.Link))
 	if err != nil {
 		return nil, err
@@ -139,7 +155,7 @@ func (ld *Ledge) createReceiveTransaction(send *block.Block) ([]byte, error) {
 		receive.Representative = send.Link
 	}
 
-	receive.Account = ld.GetAccount(send.Link)
+	receive.Account = send.Link
 	receive.Link = send.Hash
 
 	if err := ld.signAndPow(receive); err != nil {
@@ -168,21 +184,33 @@ func (ld *Ledge) signAndPow(blk *block.Block) (error) {
 	return nil
 }
 
-func (ld *Ledge) CreateAccount() []byte {
-	acc := []byte("account")
+func (ld *Ledge) CreateAccount() (string, error) {
+	keys, err := keypair.New()
+	if err != nil {
+		return "", err
+	}
+
+	acc := &Account{Keys: keys}
+	addr := address.New()
+	ad, err := addr.GenerateForKey(acc.Keys.PublicKey)
+	if err != nil {
+		return "", err
+	}
+
+	acc.Address = string(ad)
 	ld.AddAccount(acc)
-	return acc
+	return acc.Address, nil
 }
 
-func (ld *Ledge) AddAccount(acc []byte) {
-	ld.accounts[string(acc)] = acc
+func (ld *Ledge) AddAccount(acc *Account) {
+	ld.accounts[acc.Address] = acc
 }
 
 func (ld *Ledge) GetDefaultAccount() []byte {
 	return []byte("account")
 }
 
-func (ld *Ledge) GetAccount(acc []byte) []byte {
+func (ld *Ledge) GetAccount(acc []byte) *Account {
 	return ld.accounts[string(acc)]
 }
 
@@ -204,3 +232,5 @@ func (ld *Ledge) sign(blk *block.Block) error {
 	blk.Signature = hash
 	return nil
 }
+
+//TODO: add transaction verification as in the paper
