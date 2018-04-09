@@ -9,10 +9,10 @@ import (
 	"encoding/hex"
 )
 
-type BlockType int16
+type Type int16
 
 const (
-	OPEN    BlockType = 1 + iota
+	OPEN    Type = 1 + iota
 	SEND
 	RECEIVE
 	CHANGE
@@ -20,7 +20,7 @@ const (
 
 type Block struct {
 	Timestamp      int64
-	Type           BlockType
+	Type           Type
 	Account        []byte
 	Representative []byte
 	Previous       []byte
@@ -32,11 +32,11 @@ type Block struct {
 	PowNonce       int64
 }
 
-func (bt BlockType) IsValid() (bool) {
+func (bt Type) IsValid() (bool) {
 	return bt >= OPEN && bt <= CHANGE
 }
 
-func (bt BlockType) String() (string) {
+func (bt Type) String() (string) {
 	name := ""
 	switch bt {
 	case OPEN:

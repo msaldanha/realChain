@@ -28,7 +28,7 @@ type Validator interface {
 }
 
 type ValidatorCreator interface {
-	CreateValidatorForBlock(blockType BlockType, store keyvaluestore.Storer) (Validator)
+	CreateValidatorForBlock(blockType Type, store keyvaluestore.Storer) (Validator)
 }
 
 type blockValidatorCreator struct {
@@ -58,7 +58,7 @@ func NewBlockValidatorCreator() (ValidatorCreator) {
 	return &blockValidatorCreator{}
 }
 
-func (*blockValidatorCreator) CreateValidatorForBlock(blockType BlockType, store keyvaluestore.Storer) (Validator) {
+func (*blockValidatorCreator) CreateValidatorForBlock(blockType Type, store keyvaluestore.Storer) (Validator) {
 	switch blockType {
 	case OPEN:
 		return &OpenBlockValidator{BaseBlockValidator{store}}
