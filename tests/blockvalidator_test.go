@@ -4,8 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/golang/mock/gomock"
-	. "github.com/msaldanha/realChain/block"
-	"github.com/msaldanha/realChain/validator"
+	"github.com/msaldanha/realChain/block"
 	"time"
 )
 
@@ -15,66 +14,66 @@ var _ = Describe("BlockValidator", func() {
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(OPEN, ms)
+		val := block.NewBlockValidatorCreator().CreateValidatorForBlock(block.OPEN, ms)
 
-		block := &Block{}
-		ok, err := val.IsFilled(block)
+		blk := &block.Block{}
+		ok, err := val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Invalid block type"))
+		Expect(err).To(Equal(block.ErrInvalidBlockType))
 
-		block.Type = OPEN
+		blk.Type = block.OPEN
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Invalid block timestamp"))
+		Expect(err).To(Equal(block.ErrInvalidBlockTimestamp))
 
-		block.Timestamp = time.Now().Unix()
+		blk.Timestamp = time.Now().Unix()
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block account can not be empty"))
+		Expect(err).To(Equal(block.ErrBlockAccountCantBeEmpty))
 
-		block.Account = []byte("xxxxxxxxxxxxxxxxxxx")
+		blk.Account = []byte("xxxxxxxxxxxxxxxxxxx")
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block signature can not be empty"))
+		Expect(err).To(Equal(block.ErrBlockSignatureCantBeEmpty))
 
-		block.Signature = []byte("ssssssssssssssssssssss")
+		blk.Signature = []byte("ssssssssssssssssssssss")
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block PoW nonce can not be zero"))
+		Expect(err).To(Equal(block.ErrBlockPowNonceCantBeZero))
 
-		block.PowNonce = 1
+		blk.PowNonce = 1
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block hash can not be empty"))
+		Expect(err).To(Equal(block.ErrBlockHashCantBeEmpty))
 
-		block.Hash = []byte("xxxxxxxxxxxxxxxxxxx")
+		blk.Hash = []byte("xxxxxxxxxxxxxxxxxxx")
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block link can not be empty"))
+		Expect(err).To(Equal(block.ErrBlockLinkCantBeEmpty))
 
-		block.Link = []byte("xxxxxxxxxxxxxxxxxxx")
+		blk.Link = []byte("xxxxxxxxxxxxxxxxxxx")
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block representative can not be empty"))
+		Expect(err).To(Equal(block.ErrBlockRepresentativeCantBeEmpty))
 
-		block.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
+		blk.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeTrue())
 		Expect(err).To(BeNil())
 	})
@@ -84,24 +83,24 @@ var _ = Describe("BlockValidator", func() {
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(SEND, ms)
+		val := block.NewBlockValidatorCreator().CreateValidatorForBlock(block.SEND, ms)
 
-		block := &Block{}
-		ok, err := val.IsFilled(block)
+		blk := &block.Block{}
+		ok, err := val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Invalid block type"))
+		Expect(err).To(Equal(block.ErrInvalidBlockType))
 
-		block.Type = SEND
+		blk.Type = block.SEND
 
-		assertCommonVal(val, block)
+		assertCommonVal(val, blk)
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block link can not be empty"))
+		Expect(err).To(Equal(block.ErrBlockLinkCantBeEmpty))
 
-		block.Link = []byte("xxxxxxxxxxxxxxxxxxx")
+		blk.Link = []byte("xxxxxxxxxxxxxxxxxxx")
 	})
 
 	It("Should not accept empty/partial filled block for RECEIVE type", func() {
@@ -109,24 +108,24 @@ var _ = Describe("BlockValidator", func() {
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(RECEIVE, ms)
+		val := block.NewBlockValidatorCreator().CreateValidatorForBlock(block.RECEIVE, ms)
 
-		block := &Block{}
-		ok, err := val.IsFilled(block)
+		blk := &block.Block{}
+		ok, err := val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Invalid block type"))
+		Expect(err).To(Equal(block.ErrInvalidBlockType))
 
-		block.Type = RECEIVE
+		blk.Type = block.RECEIVE
 
-		assertCommonVal(val, block)
+		assertCommonVal(val, blk)
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block source can not be empty"))
+		Expect(err).To(Equal(block.ErrBlockLinkCantBeEmpty))
 
-		block.Link = []byte("xxxxxxxxxxxxxxxxxxx")
+		blk.Link = []byte("xxxxxxxxxxxxxxxxxxx")
 	})
 
 	It("Should not accept empty/partial filled block for CHANGE type", func() {
@@ -134,24 +133,24 @@ var _ = Describe("BlockValidator", func() {
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(CHANGE, ms)
+		val := block.NewBlockValidatorCreator().CreateValidatorForBlock(block.CHANGE, ms)
 
-		block := &Block{}
-		ok, err := val.IsFilled(block)
+		blk := &block.Block{}
+		ok, err := val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Invalid block type"))
+		Expect(err).To(Equal(block.ErrInvalidBlockType))
 
-		block.Type = CHANGE
+		blk.Type = block.CHANGE
 
-		assertCommonVal(val, block)
+		assertCommonVal(val, blk)
 
-		ok, err = val.IsFilled(block)
+		ok, err = val.IsFilled(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block representative can not be empty"))
+		Expect(err).To(Equal(block.ErrBlockRepresentativeCantBeEmpty))
 
-		block.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
+		blk.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
 	})
 
 	It("Should not accept OPEN block with invalid fields", func() {
@@ -159,20 +158,20 @@ var _ = Describe("BlockValidator", func() {
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(OPEN, ms)
-		block := &Block{Type: OPEN, Link: []byte([]byte("ddddddddddddd")), Previous: []byte([]byte("ppppppppp")),
+		val := block.NewBlockValidatorCreator().CreateValidatorForBlock(block.OPEN, ms)
+		blk := &block.Block{Type: block.OPEN, Link: []byte([]byte("ddddddddddddd")), Previous: []byte([]byte("ppppppppp")),
 		Signature: []byte([]byte("ssssssss")), Balance: 1, Timestamp: 1,
 			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr")}
-		block.SetHash()
+		blk.SetHash()
 
-		ok, err := val.IsValid(block)
+		ok, err := val.IsValid(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block signature does not match"))
+		Expect(err).To(Equal(block.ErrBlockSignatureDoesNotMatch))
 
-		block.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")
+		blk.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")
 
-		ok, err = val.IsValid(block)
+		ok, err = val.IsValid(blk)
 		Expect(err).To(BeNil())
 		Expect(ok).To(BeTrue())
 	})
@@ -182,19 +181,19 @@ var _ = Describe("BlockValidator", func() {
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(SEND, ms)
-		block := &Block{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		val := block.NewBlockValidatorCreator().CreateValidatorForBlock(block.SEND, ms)
+		blk := &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		block.SetHash()
+		blk.SetHash()
 
-		ok, err := val.IsValid(block)
+		ok, err := val.IsValid(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block signature does not match"))
+		Expect(err).To(Equal(block.ErrBlockSignatureDoesNotMatch))
 
-		block.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")
+		blk.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")
 
-		ok, err = val.IsValid(block)
+		ok, err = val.IsValid(blk)
 		Expect(err).To(BeNil())
 		Expect(ok).To(BeTrue())
 
@@ -205,35 +204,35 @@ var _ = Describe("BlockValidator", func() {
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(RECEIVE, ms)
-		block := &Block{Type: RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		val := block.NewBlockValidatorCreator().CreateValidatorForBlock(block.RECEIVE, ms)
+		blk := &block.Block{Type: block.RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		block.SetHash()
+		blk.SetHash()
 
-		ok, err := val.IsValid(block)
+		ok, err := val.IsValid(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Source not found"))
+		Expect(err).To(Equal(block.ErrSourceNotFound))
 
-		source := &Block{Type: OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		source := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		ms.Put("ddddddddddddd", source)
 
-		ok, err = val.IsValid(block)
+		ok, err = val.IsValid(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Source of invalid type"))
+		Expect(err).To(Equal(block.ErrInvalidSourceType))
 
-		source.Type = SEND
+		source.Type = block.SEND
 
-		ok, err = val.IsValid(block)
+		ok, err = val.IsValid(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block signature does not match"))
+		Expect(err).To(Equal(block.ErrBlockSignatureDoesNotMatch))
 
-		block.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")
+		blk.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")
 
-		ok, err = val.IsValid(block)
+		ok, err = val.IsValid(blk)
 		Expect(err).To(BeNil())
 		Expect(ok).To(BeTrue())
 	})
@@ -243,19 +242,19 @@ var _ = Describe("BlockValidator", func() {
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := validator.NewBlockValidatorCreator().CreateValidatorForBlock(CHANGE, ms)
-		block := &Block{Type: CHANGE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		val := block.NewBlockValidatorCreator().CreateValidatorForBlock(block.CHANGE, ms)
+		blk := &block.Block{Type: block.CHANGE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		block.SetHash()
+		blk.SetHash()
 
-		ok, err := val.IsValid(block)
+		ok, err := val.IsValid(blk)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Block signature does not match"))
+		Expect(err).To(Equal(block.ErrBlockSignatureDoesNotMatch))
 
-		block.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")
+		blk.Signature = []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")
 
-		ok, err = val.IsValid(block)
+		ok, err = val.IsValid(blk)
 		Expect(err).To(BeNil())
 		Expect(ok).To(BeTrue())
 	})

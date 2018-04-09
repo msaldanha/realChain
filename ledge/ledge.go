@@ -3,9 +3,20 @@ package ledge
 import (
 	"github.com/msaldanha/realChain/blockstore"
 	"github.com/msaldanha/realChain/block"
-	"errors"
 	"github.com/msaldanha/realChain/keypair"
 	"github.com/msaldanha/realChain/address"
+	"github.com/msaldanha/realChain/Error"
+)
+
+const (
+	ErrInvalidAccountBalance         = Error.Error("invalid account balance")
+	ErrLedgerAlreadyInitialized      = Error.Error("ledger already initialized")
+    ErrFromToMustBeDifferent         = Error.Error("from and to accounts must be different")
+	ErrFromAccountNotFound           = Error.Error("from account not found")
+	ErrNotEnoughFunds                = Error.Error("not enough funds")
+	ErrAmountCantBeZero              = Error.Error("amount cannot be zero")
+	ErrAccountNotManagedByThisLedger = Error.Error("account not managed by this ledger")
+	ErrInvalidSendTransactionAddress = Error.Error("invalid send transaction address")
 )
 
 type Ledge struct {
@@ -23,7 +34,7 @@ func (ld *Ledge) Use(bs *blockstore.BlockStore) {
 
 func (ld *Ledge) Initialize(initialBalance float64) (*block.Block, error) {
 	if !ld.bs.IsEmpty() {
-		return nil, errors.New("Ledge already initialized")
+		return nil, ErrLedgerAlreadyInitialized
 	}
 
 	genesisBlock := ld.bs.CreateOpenBlock()
@@ -48,7 +59,7 @@ func (ld *Ledge) Initialize(initialBalance float64) (*block.Block, error) {
 	blk, err := ld.bs.Store(genesisBlock)
 	if err != nil {
 		if err.Error() == "Previous block can not be empty" {
-			return nil, errors.New("Ledge already initialized")
+			return nil, ErrLedgerAlreadyInitialized
 		}
 		return nil, err
 	}
@@ -63,19 +74,19 @@ func (ld *Ledge) Send(from, to string, amount float64) (string, error) {
 	}
 
 	if from == to {
-		return "", errors.New("from and to accounts must be different")
+		return "", ErrFromToMustBeDifferent
 	}
 
 	if fromTipBlk == nil {
-		return "", errors.New("from account not found")
+		return "", ErrFromAccountNotFound
 	}
 
 	if fromTipBlk.Balance < amount {
-		return "", errors.New("not enough funds")
+		return "", ErrNotEnoughFunds
 	}
 
 	if amount == 0 {
-		return "", errors.New("amount cannot be zero")
+		return "", ErrAmountCantBeZero
 	}
 
 	hash, err := ld.createSendTransaction(fromTipBlk, []byte(to), amount)
@@ -90,7 +101,7 @@ func (ld *Ledge) Receive(send *block.Block) (string, error) {
 	acc := ld.GetAccount(send.Link)
 
 	if acc == nil {
-		return "", errors.New("account not managed by this ledge")
+		return "", ErrAccountNotManagedByThisLedger
 	}
 
 	hash, err := ld.createReceiveTransaction(send)
@@ -125,17 +136,17 @@ func (ld *Ledge) createReceiveTransaction(send *block.Block) ([]byte, error) {
 
 	amount := prev.Balance - send.Balance
 	if amount <= 0 {
-		return nil, errors.New("invalid account balance")
+		return nil, ErrInvalidAccountBalance
 	}
 
 	addr := address.New()
-	if valid, err := addr.IsValid(string(send.Link)); !valid {
-		return nil, errors.New("send transaction addr is not valid: " + err.Error())
+	if valid, _ := addr.IsValid(string(send.Link)); !valid {
+		return nil, ErrInvalidSendTransactionAddress
 	}
 
 	acc := ld.GetAccount(send.Link)
 	if acc == nil {
-		return nil, errors.New("account not managed by this ledge")
+		return nil, ErrAccountNotManagedByThisLedger
 	}
 
 	receiveTip, err := ld.bs.Retrieve(string(send.Link))

@@ -12,24 +12,24 @@ import (
 type BlockType int16
 
 const (
-	OPEN BlockType = 1 + iota
+	OPEN    BlockType = 1 + iota
 	SEND
 	RECEIVE
 	CHANGE
 )
 
 type Block struct {
-	Timestamp     	int64
-	Type 			BlockType
-	Account 		[]byte
-	Representative 	[]byte
-	Previous 		[]byte
-	Link 			[]byte
-	Balance 		float64
-	Hash 			[]byte
-	Signature 		[]byte
-	PowTarget		int16
-	PowNonce		int64
+	Timestamp      int64
+	Type           BlockType
+	Account        []byte
+	Representative []byte
+	Previous       []byte
+	Link           []byte
+	Balance        float64
+	Hash           []byte
+	Signature      []byte
+	PowTarget      int16
+	PowNonce       int64
 }
 
 func (bt BlockType) IsValid() (bool) {

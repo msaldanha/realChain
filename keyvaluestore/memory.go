@@ -1,29 +1,27 @@
 package keyvaluestore
 
-import "github.com/msaldanha/realChain/block"
-
 type MemoryKeyValueStore struct {
-	pairs map[string]*block.Block
-	tip *block.Block
+	pairs map[string]interface{}
+	tip interface{}
 }
 
 func NewMemoryKeyValueStore() (*MemoryKeyValueStore) {
-	pairs := make(map[string]*block.Block)
+	pairs := make(map[string]interface{})
 	return &MemoryKeyValueStore{pairs:pairs}
 }
 
-func (st *MemoryKeyValueStore) Put(key string, value *block.Block) (error) {
+func (st *MemoryKeyValueStore) Put(key string, value interface{}) (error) {
 	st.tip = value
 	st.pairs[key] = value
 	return nil
 }
 
-func (st *MemoryKeyValueStore) Get(key string) (*block.Block, bool, error) {
+func (st *MemoryKeyValueStore) Get(key string) (interface{}, bool, error) {
 	value, found := st.pairs[key]
 	return value, found, nil
 }
 
-func (st *MemoryKeyValueStore) GetTip(key string) (*block.Block, bool, error) {
+func (st *MemoryKeyValueStore) GetTip(key string) (interface{}, bool, error) {
 	if st.tip == nil {
 		return nil, false, nil
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/msaldanha/realChain/blockstore"
 	"github.com/golang/mock/gomock"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"github.com/msaldanha/realChain/validator"
 	"github.com/msaldanha/realChain/ledge"
 	"github.com/msaldanha/realChain/block"
 )
@@ -17,7 +16,7 @@ var _ = Describe("Ledge", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
-		val := validator.NewBlockValidatorCreator()
+		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledge.New()
@@ -36,7 +35,7 @@ var _ = Describe("Ledge", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
-		val := validator.NewBlockValidatorCreator()
+		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledge.New()
@@ -48,7 +47,7 @@ var _ = Describe("Ledge", func() {
 
 		blk, err = ld.Initialize(1000)
 		Expect(err).NotTo(BeNil())
-		Expect(err.Error()).To(Equal("Ledge already initialized"))
+		Expect(err).To(Equal(ledge.ErrLedgerAlreadyInitialized))
 	})
 
 	It("Should send funds if acc has funds to send", func() {
@@ -56,7 +55,7 @@ var _ = Describe("Ledge", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
-		val := validator.NewBlockValidatorCreator()
+		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledge.New()
@@ -86,7 +85,7 @@ var _ = Describe("Ledge", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
-		val := validator.NewBlockValidatorCreator()
+		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledge.New()
@@ -113,7 +112,7 @@ var _ = Describe("Ledge", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
-		val := validator.NewBlockValidatorCreator()
+		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledge.New()
@@ -156,7 +155,7 @@ var _ = Describe("Ledge", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
-		val := validator.NewBlockValidatorCreator()
+		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledge.New()

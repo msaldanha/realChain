@@ -4,11 +4,15 @@ import (
 	"crypto/sha256"
 	"golang.org/x/crypto/ripemd160"
 	"bytes"
-	"errors"
+	"github.com/msaldanha/realChain/Error"
 )
 
 const version = byte(0x00)
 const addressChecksumLen = 4
+
+const (
+	ErrInvalidChecksum = Error.Error("invalid checksum")
+)
 
 type Address struct {
 }
@@ -37,7 +41,7 @@ func (addr *Address) IsValid(address string) (bool, error) {
 	var chksum [4]byte
 	copy(chksum[:], pubKeyHash[len(pubKeyHash) - addressChecksumLen:])
 	if bytes.Compare(checksum(pubKeyHash[:len(pubKeyHash) - addressChecksumLen]), chksum[:]) != 0 {
-		return false, errors.New("invalid checksum")
+		return false, ErrInvalidChecksum
 	}
 	return true, nil
 }

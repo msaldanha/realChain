@@ -3,7 +3,6 @@ package tests
 import (
 	. "github.com/onsi/gomega"
 	. "github.com/msaldanha/realChain/block"
-	"github.com/msaldanha/realChain/validator"
 	"time"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"fmt"
@@ -13,46 +12,46 @@ import (
 	"github.com/msaldanha/realChain/ledge"
 )
 
-func assertCommonVal(val validator.BlockValidator, block *Block) {
+func assertCommonVal(val BlockValidator, block *Block) {
 	ok, err := val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err.Error()).To(Equal("Invalid block timestamp"))
+	Expect(err).To(Equal(ErrInvalidBlockTimestamp))
 
 	block.Timestamp = time.Now().Unix()
 
 	ok, err = val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err.Error()).To(Equal("Block account can not be empty"))
+	Expect(err).To(Equal(ErrBlockAccountCantBeEmpty))
 
 	block.Account = []byte("xxxxxxxxxxxxxxxxxxx")
 
 	ok, err = val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err.Error()).To(Equal("Previous block can not be empty"))
+	Expect(err).To(Equal(ErrPreviousBlockCantBeEmpty))
 
 	block.Previous = []byte("yyyyyyyyyyyyyyyyyyyy")
 
 	ok, err = val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err.Error()).To(Equal("Block signature can not be empty"))
+	Expect(err).To(Equal(ErrBlockSignatureCantBeEmpty))
 
 	block.Signature = []byte("ssssssssssssssssssssss")
 
 	ok, err = val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err.Error()).To(Equal("Block PoW nonce can not be zero"))
+	Expect(err).To(Equal(ErrBlockPowNonceCantBeZero))
 
 	block.PowNonce = 1
 
 	ok, err = val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err.Error()).To(Equal("Block hash can not be empty"))
+	Expect(err).To(Equal(ErrBlockHashCantBeEmpty))
 
 	block.SetHash()
 }
