@@ -17,10 +17,10 @@ const targetBits int16 = 16
 
 type BlockStore struct {
 	store                 keyvaluestore.Storer
-	blockValidatorCreator block.BlockValidatorCreator
+	blockValidatorCreator block.ValidatorCreator
 }
 
-func New(store keyvaluestore.Storer, validatorCreator block.BlockValidatorCreator) (*BlockStore) {
+func New(store keyvaluestore.Storer, validatorCreator block.ValidatorCreator) (*BlockStore) {
 	a := &BlockStore{store: store, blockValidatorCreator: validatorCreator}
 	return a
 }

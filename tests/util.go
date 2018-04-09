@@ -12,7 +12,7 @@ import (
 	"github.com/msaldanha/realChain/ledge"
 )
 
-func assertCommonVal(val BlockValidator, block *Block) {
+func assertCommonVal(val Validator, block *Block) {
 	ok, err := val.IsFilled(block)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())

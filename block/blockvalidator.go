@@ -22,13 +22,13 @@ const (
 	ErrInvalidSourceType              = Error.Error("invalid source type")
 )
 
-type BlockValidator interface {
+type Validator interface {
 	IsFilled(block *Block) (bool, error)
 	IsValid(block *Block) (bool, error)
 }
 
-type BlockValidatorCreator interface {
-	CreateValidatorForBlock(blockType BlockType, store keyvaluestore.Storer) (BlockValidator)
+type ValidatorCreator interface {
+	CreateValidatorForBlock(blockType BlockType, store keyvaluestore.Storer) (Validator)
 }
 
 type blockValidatorCreator struct {
@@ -54,11 +54,11 @@ type ChangeBlockValidator struct {
 	BaseBlockValidator
 }
 
-func NewBlockValidatorCreator() (BlockValidatorCreator) {
+func NewBlockValidatorCreator() (ValidatorCreator) {
 	return &blockValidatorCreator{}
 }
 
-func (*blockValidatorCreator) CreateValidatorForBlock(blockType BlockType, store keyvaluestore.Storer) (BlockValidator) {
+func (*blockValidatorCreator) CreateValidatorForBlock(blockType BlockType, store keyvaluestore.Storer) (Validator) {
 	switch blockType {
 	case OPEN:
 		return &OpenBlockValidator{BaseBlockValidator{store}}

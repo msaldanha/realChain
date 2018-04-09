@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var _ = Describe("BlockValidator", func() {
+var _ = Describe("Validator", func() {
 	It("Should not accept empty/partial filled block for OPEN type", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
