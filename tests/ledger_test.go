@@ -6,11 +6,11 @@ import (
 	"github.com/msaldanha/realChain/blockstore"
 	"github.com/golang/mock/gomock"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"github.com/msaldanha/realChain/ledge"
+	"github.com/msaldanha/realChain/ledger"
 	"github.com/msaldanha/realChain/block"
 )
 
-var _ = Describe("Ledge", func() {
+var _ = Describe("Ledger", func() {
 	It("Should create the Genesis block", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
@@ -19,7 +19,7 @@ var _ = Describe("Ledge", func() {
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
-		ld := ledge.New()
+		ld := ledger.New()
 		ld.Use(bs)
 
 		blk, err := ld.Initialize(1000)
@@ -38,7 +38,7 @@ var _ = Describe("Ledge", func() {
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
-		ld := ledge.New()
+		ld := ledger.New()
 		ld.Use(bs)
 
 		blk, err := ld.Initialize(1000)
@@ -47,7 +47,7 @@ var _ = Describe("Ledge", func() {
 
 		blk, err = ld.Initialize(1000)
 		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(ledge.ErrLedgerAlreadyInitialized))
+		Expect(err).To(Equal(ledger.ErrLedgerAlreadyInitialized))
 	})
 
 	It("Should send funds if acc has funds to send", func() {
@@ -58,7 +58,7 @@ var _ = Describe("Ledge", func() {
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
-		ld := ledge.New()
+		ld := ledger.New()
 		ld.Use(bs)
 
 		blk, err := ld.Initialize(1000)
@@ -88,7 +88,7 @@ var _ = Describe("Ledge", func() {
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
-		ld := ledge.New()
+		ld := ledger.New()
 		ld.Use(bs)
 
 		blk, err := ld.Initialize(1000)
@@ -115,7 +115,7 @@ var _ = Describe("Ledge", func() {
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
-		ld := ledge.New()
+		ld := ledger.New()
 		ld.Use(bs)
 
 		blk, err := ld.Initialize(1000)
@@ -158,7 +158,7 @@ var _ = Describe("Ledge", func() {
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
-		ld := ledge.New()
+		ld := ledger.New()
 		ld.Use(bs)
 
 		blk, err := ld.Initialize(1000)
@@ -193,7 +193,7 @@ var _ = Describe("Ledge", func() {
 	})
 })
 
-func sendFunds(ld *ledge.Ledge, bs *blockstore.BlockStore, blk *block.Block, receiveAcc string, amount float64) (string, string) {
+func sendFunds(ld *ledger.Ledger, bs *blockstore.BlockStore, blk *block.Block, receiveAcc string, amount float64) (string, string) {
 	sendHash, err := ld.Send(string(blk.Account), receiveAcc, amount)
 	Expect(err).To(BeNil())
 	sendBlk, err := bs.Retrieve(sendHash)

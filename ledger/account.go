@@ -1,4 +1,4 @@
-package ledge
+package ledger
 
 import (
 	"github.com/msaldanha/realChain/keypair"

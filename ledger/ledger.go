@@ -1,4 +1,4 @@
-package ledge
+package ledger
 
 import (
 	"github.com/msaldanha/realChain/blockstore"
@@ -19,20 +19,20 @@ const (
 	ErrInvalidSendTransactionAddress = Error.Error("invalid send transaction address")
 )
 
-type Ledge struct {
+type Ledger struct {
 	bs *blockstore.BlockStore
 	accounts map[string]*Account
 }
 
-func New() (*Ledge) {
-	return &Ledge{accounts: make(map[string]*Account, 0)}
+func New() (*Ledger) {
+	return &Ledger{accounts: make(map[string]*Account, 0)}
 }
 
-func (ld *Ledge) Use(bs *blockstore.BlockStore) {
+func (ld *Ledger) Use(bs *blockstore.BlockStore) {
 	ld.bs = bs
 }
 
-func (ld *Ledge) Initialize(initialBalance float64) (*block.Block, error) {
+func (ld *Ledger) Initialize(initialBalance float64) (*block.Block, error) {
 	if !ld.bs.IsEmpty() {
 		return nil, ErrLedgerAlreadyInitialized
 	}
@@ -66,7 +66,7 @@ func (ld *Ledge) Initialize(initialBalance float64) (*block.Block, error) {
 	return blk, nil
 }
 
-func (ld *Ledge) Send(from, to string, amount float64) (string, error) {
+func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
 	fromTipBlk, err := ld.bs.Retrieve(from)
 
 	if err != nil {
@@ -97,7 +97,7 @@ func (ld *Ledge) Send(from, to string, amount float64) (string, error) {
 	return string(hash), nil
 }
 
-func (ld *Ledge) Receive(send *block.Block) (string, error) {
+func (ld *Ledger) Receive(send *block.Block) (string, error) {
 	acc := ld.GetAccount(send.Link)
 
 	if acc == nil {
@@ -112,7 +112,7 @@ func (ld *Ledge) Receive(send *block.Block) (string, error) {
 	return string(hash), nil
 }
 
-func (ld *Ledge) createSendTransaction(fromTip *block.Block, to []byte, amount float64) ([]byte, error) {
+func (ld *Ledger) createSendTransaction(fromTip *block.Block, to []byte, amount float64) ([]byte, error) {
 	send := ld.bs.CreateSendBlock()
 	send.Account = fromTip.Account
 	send.Link = to
@@ -128,7 +128,7 @@ func (ld *Ledge) createSendTransaction(fromTip *block.Block, to []byte, amount f
 	return send.Hash, nil
 }
 
-func (ld *Ledge) createReceiveTransaction(send *block.Block) ([]byte, error) {
+func (ld *Ledger) createReceiveTransaction(send *block.Block) ([]byte, error) {
 	prev, err := ld.bs.Retrieve(string(send.Previous))
 	if err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func (ld *Ledge) createReceiveTransaction(send *block.Block) ([]byte, error) {
 	return receive.Hash, nil
 }
 
-func (ld *Ledge) signAndPow(blk *block.Block) (error) {
+func (ld *Ledger) signAndPow(blk *block.Block) (error) {
 	err := ld.setPow(blk)
 	if err != nil {
 		return err
@@ -195,7 +195,7 @@ func (ld *Ledge) signAndPow(blk *block.Block) (error) {
 	return nil
 }
 
-func (ld *Ledge) CreateAccount() (string, error) {
+func (ld *Ledger) CreateAccount() (string, error) {
 	keys, err := keypair.New()
 	if err != nil {
 		return "", err
@@ -213,19 +213,19 @@ func (ld *Ledge) CreateAccount() (string, error) {
 	return acc.Address, nil
 }
 
-func (ld *Ledge) AddAccount(acc *Account) {
+func (ld *Ledger) AddAccount(acc *Account) {
 	ld.accounts[acc.Address] = acc
 }
 
-func (ld *Ledge) GetDefaultAccount() []byte {
+func (ld *Ledger) GetDefaultAccount() []byte {
 	return []byte("account")
 }
 
-func (ld *Ledge) GetAccount(acc []byte) *Account {
+func (ld *Ledger) GetAccount(acc []byte) *Account {
 	return ld.accounts[string(acc)]
 }
 
-func (ld *Ledge) setPow(blk *block.Block) error {
+func (ld *Ledger) setPow(blk *block.Block) error {
 	nonce, hash, err := ld.bs.CalculatePow(blk)
 	if err != nil {
 		return err
@@ -235,7 +235,7 @@ func (ld *Ledge) setPow(blk *block.Block) error {
 	return nil
 }
 
-func (ld *Ledge) sign(blk *block.Block) error {
+func (ld *Ledger) sign(blk *block.Block) error {
 	hash, err := blk.GetHash()
 	if err != nil {
 		return err

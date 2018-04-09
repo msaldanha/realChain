@@ -9,7 +9,7 @@ import (
 	"strings"
 	"github.com/msaldanha/realChain/keypair"
 	"github.com/msaldanha/realChain/address"
-	"github.com/msaldanha/realChain/ledge"
+	"github.com/msaldanha/realChain/ledger"
 )
 
 func assertCommonVal(val Validator, block *Block) {
@@ -74,9 +74,9 @@ func dumpBlockChain(blockChain []*Block) {
 	fmt.Println("============= End =================")
 }
 
-func createTestAccount() *ledge.Account {
+func createTestAccount() *ledger.Account {
 	keys, _ := keypair.New()
-	acc := &ledge.Account{Keys: keys}
+	acc := &ledger.Account{Keys: keys}
 	addr := address.New()
 	ad, _ := addr.GenerateForKey(acc.Keys.PublicKey)
 	acc.Address = string(ad)
