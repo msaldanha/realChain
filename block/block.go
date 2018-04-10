@@ -30,6 +30,7 @@ type Block struct {
 	Signature      []byte
 	PowTarget      int16
 	PowNonce       int64
+	PubKey         []byte
 }
 
 func (bt Type) IsValid() (bool) {

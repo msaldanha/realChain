@@ -2,12 +2,10 @@ package block
 
 import (
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"bytes"
 	"github.com/msaldanha/realChain/Error"
 )
 
 const (
-	ErrBlockSignatureDoesNotMatch     = Error.Error("block signature does not match")
 	ErrInvalidBlockType               = Error.Error("invalid block type")
 	ErrInvalidBlockTimestamp          = Error.Error("invalid block timestamp")
 	ErrBlockAccountCantBeEmpty        = Error.Error("block account can not be empty")
@@ -20,6 +18,7 @@ const (
 	ErrDestinationNotFound            = Error.Error("destination not found")
 	ErrSourceNotFound                 = Error.Error("source not found")
 	ErrInvalidSourceType              = Error.Error("invalid source type")
+	ErrPubKeyCantBeEmpty              = Error.Error("block public key can not be empty")
 )
 
 type Validator interface {
@@ -72,24 +71,8 @@ func (*blockValidatorCreator) CreateValidatorForBlock(blockType Type, store keyv
 	return nil
 }
 
-func (v *BaseBlockValidator) HasValidSignature(block *Block) (bool, error) {
-	hash, _ := block.GetHash()
-	if bytes.Compare(block.Signature, hash) == 0 {
-		return true, nil
-	}
-	//text := fmt.Sprintf("%s : %s", string(block.Signature), string(hash))
-	//log.Println(text)
-	return false, ErrBlockSignatureDoesNotMatch
-}
-
 func (v *BaseBlockValidator) IsValid(block *Block) (bool, error) {
-	if ok, err := v.IsFilled(block); !ok {
-		return ok, err
-	}
-	if ok, err := v.HasValidSignature(block); !ok {
-		return ok, err
-	}
-	return true, nil
+	return v.IsFilled(block)
 }
 
 func (v *BaseBlockValidator) IsFilled(block *Block) (bool, error) {
@@ -113,6 +96,9 @@ func (v *BaseBlockValidator) IsFilled(block *Block) (bool, error) {
 	}
 	if len(block.Hash) == 0 {
 		return false, ErrBlockHashCantBeEmpty
+	}
+	if len(block.PubKey) == 0 {
+		return false, ErrPubKeyCantBeEmpty
 	}
 	return true, nil
 }
@@ -157,6 +143,13 @@ func (v *SendBlockValidator) IsFilled(block *Block) (bool, error) {
 		return false, ErrBlockLinkCantBeEmpty
 	}
 	return v.BaseBlockValidator.IsFilled(block)
+}
+
+func (v *SendBlockValidator) IsValid(block *Block) (bool, error) {
+	if ok, err := v.IsFilled(block); !ok {
+		return ok, err
+	}
+	return v.BaseBlockValidator.IsValid(block)
 }
 
 func (v *SendBlockValidator) HasValidDestination(block *Block) (bool, error) {

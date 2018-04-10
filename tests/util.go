@@ -54,6 +54,13 @@ func assertCommonVal(val Validator, block *Block) {
 	Expect(err).To(Equal(ErrBlockHashCantBeEmpty))
 
 	block.SetHash()
+
+	ok, err = val.IsFilled(block)
+	Expect(ok).To(BeFalse())
+	Expect(err).NotTo(BeNil())
+	Expect(err).To(Equal(ErrPubKeyCantBeEmpty))
+
+	block.PubKey = []byte("ssssssssssssssssssssss")
 }
 
 func createNonEmptyMemoryStore() *keyvaluestore.MemoryKeyValueStore {

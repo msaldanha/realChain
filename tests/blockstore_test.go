@@ -19,15 +19,15 @@ var _ = Describe("BlockStore", func() {
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 		blk := &block.Block{}
-		ok, err := bs.Store(blk)
-		Expect(ok).To(BeNil())
+		blk, err := bs.Store(blk)
+		Expect(blk).To(BeNil())
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(block.ErrInvalidBlockType))
 
 		blk = &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
-		ok, err = bs.Store(blk)
-		Expect(ok).To(BeNil())
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix(), PubKey: []byte("kkkkkkk")}
+		blk1, err := bs.Store(blk)
+		Expect(blk1).To(BeNil())
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(block.ErrBlockHashCantBeEmpty))
 
@@ -37,10 +37,9 @@ var _ = Describe("BlockStore", func() {
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
 		ms.Put("ddddddddddddd", dest)
 
-		ok, err = bs.Store(blk)
-		Expect(ok).To(BeNil())
-		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(block.ErrBlockSignatureDoesNotMatch))
+		blk, err = bs.Store(blk)
+		Expect(blk).NotTo(BeNil())
+		Expect(err).To(BeNil())
 	})
 
 	It("Should accept properly filled block", func() {
@@ -53,7 +52,7 @@ var _ = Describe("BlockStore", func() {
 
 		blk := &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b"), Balance: 1,
-			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		blk.SetHash()
 
 		dest := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
@@ -120,16 +119,18 @@ var _ = Describe("BlockStore", func() {
 
 		open := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b"), Balance: 1,
-			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		open.SetHash()
 
 		blk, err := bs.Store(open)
 
 		blk = &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: open.Hash,
 			Signature: []byte("df0d25f706c31d2007ed91da185ac727e5e38bc77f4309bb587e1ff7557ace39"), Balance: 1,
-			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1,
+			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk"),
 		}
 		blk.SetHash()
+
+		ms.Put("ddddddddddddd", &block.Block{})
 
 		blk, err = bs.Store(blk)
 
