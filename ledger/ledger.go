@@ -244,10 +244,6 @@ func (ld *Ledger) AddAccount(acc *Account) {
 	ld.accounts[acc.Address] = acc
 }
 
-func (ld *Ledger) GetDefaultAccount() []byte {
-	return []byte("account")
-}
-
 func (ld *Ledger) GetAccount(acc []byte) *Account {
 	return ld.accounts[string(acc)]
 }
@@ -411,5 +407,3 @@ func (ld *Ledger) getPreviousTransaction(blk *block.Block) (*block.Block, error)
 	}
 	return previous, nil
 }
-
-//TODO: add transaction verification as in the paper
