@@ -186,15 +186,15 @@ func (v *ReceiveBlockValidator) IsValid(block *Block) (bool, error) {
 	return v.BaseBlockValidator.IsValid(block)
 }
 
-func (v *ReceiveBlockValidator) HasValidSource(block *Block) (bool, error) {
-	dest, found, err := v.store.Get(string(block.Link))
+func (v *ReceiveBlockValidator) HasValidSource(blk *Block) (bool, error) {
+	dest, found, err := v.store.Get(string(blk.Link))
 	if err != nil {
 		return false, err
 	}
 	if !found {
 		return false, ErrSourceNotFound
 	}
-	source := dest.(*Block)
+	source := NewBlockFromBytes(dest)
 	if source.Type != SEND {
 		return false, ErrInvalidSourceType
 	}

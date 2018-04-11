@@ -65,7 +65,8 @@ func assertCommonVal(val Validator, block *Block) {
 
 func createNonEmptyMemoryStore() *keyvaluestore.MemoryKeyValueStore {
 	ms := keyvaluestore.NewMemoryKeyValueStore()
-	ms.Put("genesis", &Block{})
+	blk := &Block{}
+	ms.Put("genesis", blk.ToBytes())
 	return ms
 }
 

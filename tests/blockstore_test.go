@@ -35,7 +35,7 @@ var _ = Describe("BlockStore", func() {
 
 		dest := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
-		ms.Put("ddddddddddddd", dest)
+		ms.Put("ddddddddddddd", dest.ToBytes())
 
 		blk, err = bs.Store(blk)
 		Expect(blk).NotTo(BeNil())
@@ -57,14 +57,14 @@ var _ = Describe("BlockStore", func() {
 
 		dest := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		ms.Put("ddddddddddddd", dest)
+		ms.Put("ddddddddddddd", dest.ToBytes())
 
 		blk, err := bs.Store(blk)
 		Expect(err).To(BeNil())
 		Expect(blk).NotTo(BeNil())
 
 		blockFromKeyStore, _, _ := ms.Get(string(blk.Hash))
-		Expect(blockFromKeyStore).To(Equal(blk))
+		Expect(block.NewBlockFromBytes(blockFromKeyStore)).To(Equal(blk))
 	})
 
 	It("Should calculate the PoW for the block", func() {
@@ -130,7 +130,8 @@ var _ = Describe("BlockStore", func() {
 		}
 		blk.SetHash()
 
-		ms.Put("ddddddddddddd", &block.Block{})
+		b :=  &block.Block{}
+		ms.Put("ddddddddddddd", b.ToBytes())
 
 		blk, err = bs.Store(blk)
 

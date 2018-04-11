@@ -223,7 +223,7 @@ var _ = Describe("Validator", func() {
 
 		source := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
-		ms.Put("ddddddddddddd", source)
+		ms.Put("ddddddddddddd", source.ToBytes())
 
 		ok, err = val.IsValid(blk)
 		Expect(ok).To(BeFalse())
@@ -231,6 +231,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).To(Equal(block.ErrInvalidSourceType))
 
 		source.Type = block.SEND
+		ms.Put("ddddddddddddd", source.ToBytes())
 
 		ok, err = val.IsValid(blk)
 		Expect(err).To(BeNil())

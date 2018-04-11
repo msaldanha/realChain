@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/gob"
 )
 
 type Type int16
@@ -79,4 +80,18 @@ func (b *Block) GetHashableBytes() ([][]byte, error) {
 	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
 	return [][]byte{timestamp, b.Account, b.Representative,
 		b.Previous, b.Link, balance.Bytes()}, nil
+}
+
+func (b *Block) ToBytes() []byte {
+	var result bytes.Buffer
+	encoder := gob.NewEncoder(&result)
+	encoder.Encode(b)
+	return result.Bytes()
+}
+
+func NewBlockFromBytes(d []byte) *Block {
+	var block Block
+	decoder := gob.NewDecoder(bytes.NewReader(d))
+	decoder.Decode(&block)
+	return &block
 }

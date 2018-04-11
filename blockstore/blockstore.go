@@ -37,8 +37,8 @@ func (bs *BlockStore) Store(blk *block.Block) (*block.Block, error) {
 	if ok, err := bs.isValid(blk); !ok {
 		return nil, err
 	}
-	bs.store.Put(string(blk.Hash), blk)
-	bs.store.Put(string(blk.Account), blk)
+	bs.store.Put(string(blk.Hash), blk.ToBytes())
+	bs.store.Put(string(blk.Account), blk.ToBytes())
 	return blk, nil
 }
 
@@ -129,7 +129,7 @@ func (bs *BlockStore) GetBlock(blockHash string) (*block.Block, bool, error) {
 	if blk == nil {
 		return nil, ok, err
 	}
-	return blk.(*block.Block), ok, err
+	return block.NewBlockFromBytes(blk), ok, err
 }
 
 func (bs *BlockStore) IsEmpty() (bool) {
