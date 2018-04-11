@@ -17,11 +17,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -36,11 +37,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -56,11 +58,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -84,11 +87,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -112,11 +116,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -139,11 +144,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -181,11 +187,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -228,11 +235,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -267,11 +275,12 @@ var _ = Describe("Ledger", func() {
 		defer mockCtrl.Finish()
 
 		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
 		val := block.NewBlockValidatorCreator()
 		bs := blockstore.New(ms, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())

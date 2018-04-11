@@ -7,19 +7,18 @@ import (
 )
 
 const (
-	ErrExpectedBoltKeyValueStoreOptions               = Error.Error("expected BoltKeyValueStoreOptions type")
-
-	bucketName = "BlockChain"
+	ErrExpectedBoltKeyValueStoreOptions = Error.Error("expected BoltKeyValueStoreOptions type")
+	ErrInvalidBucketName                = Error.Error("invalid bucket name")
 )
 
-
 type BoltKeyValueStoreOptions struct {
-	DbFile string
+	BucketName string
+	DbFile     string
 }
 
 type BoltKeyValueStore struct {
-	db *bolt.DB
-	blockchain *bolt.Bucket
+	db         *bolt.DB
+	BucketName string
 }
 
 func NewBoltKeyValueStore() (*BoltKeyValueStore) {
@@ -32,6 +31,10 @@ func (st *BoltKeyValueStore) Init(options interface{}) (error) {
 	}
 
 	opt := options.(*BoltKeyValueStoreOptions)
+	if opt.BucketName == "" {
+		return ErrInvalidBucketName
+	}
+
 	db, err := bolt.Open(opt.DbFile, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return err
@@ -39,20 +42,20 @@ func (st *BoltKeyValueStore) Init(options interface{}) (error) {
 
 	var blockchain *bolt.Bucket
 	db.Update(func(tx *bolt.Tx) error {
-		blockchain, err = tx.CreateBucketIfNotExists([]byte(bucketName))
+		blockchain, err = tx.CreateBucketIfNotExists([]byte(opt.BucketName))
 		if err != nil {
 			return err
 		}
 		return nil
 	})
 	st.db = db
-	st.blockchain = blockchain
+	st.BucketName = opt.BucketName
 	return nil
 }
 
 func (st *BoltKeyValueStore) Put(key string, value []byte) (error) {
 	return st.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketName))
+		b := tx.Bucket([]byte(st.BucketName))
 		err := b.Put([]byte(key), value)
 		return err
 	})
@@ -62,7 +65,7 @@ func (st *BoltKeyValueStore) Get(key string) (ret []byte, ok bool, err error) {
 	ok = false
 	ret = nil
 	err = st.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketName))
+		b := tx.Bucket([]byte(st.BucketName))
 		value := b.Get([]byte(key))
 		if len(value) == 0 {
 			return nil
@@ -82,7 +85,7 @@ func (st *BoltKeyValueStore) GetTip(key string) ([]byte, bool, error) {
 func (st *BoltKeyValueStore) IsEmpty() (isEmpty bool) {
 	isEmpty = true
 	st.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketName))
+		b := tx.Bucket([]byte(st.BucketName))
 		c := b.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
 			isEmpty = false
@@ -95,7 +98,7 @@ func (st *BoltKeyValueStore) IsEmpty() (isEmpty bool) {
 
 func (st *BoltKeyValueStore) Size() (size int) {
 	st.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketName))
+		b := tx.Bucket([]byte(st.BucketName))
 		c := b.Cursor()
 		size = 0
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {

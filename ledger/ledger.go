@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"crypto/elliptic"
 	"bytes"
+	"github.com/msaldanha/realChain/keyvaluestore"
 )
 
 const (
@@ -35,15 +36,16 @@ const (
 
 type Ledger struct {
 	bs       *blockstore.BlockStore
-	accounts map[string]*Account
+	accounts keyvaluestore.Storer
 }
 
 func New() (*Ledger) {
-	return &Ledger{accounts: make(map[string]*Account, 0)}
+	return &Ledger{}
 }
 
-func (ld *Ledger) Use(bs *blockstore.BlockStore) {
-	ld.bs = bs
+func (ld *Ledger) Use(blockStore *blockstore.BlockStore, accountStore keyvaluestore.Storer) {
+	ld.bs = blockStore
+	ld.accounts = accountStore
 }
 
 func (ld *Ledger) Initialize(initialBalance float64) (*block.Block, error) {
@@ -71,14 +73,14 @@ func (ld *Ledger) Initialize(initialBalance float64) (*block.Block, error) {
 		return nil, err
 	}
 
-	blk, err := ld.bs.Store(genesisBlock)
+	_, err = ld.saveTransaction(genesisBlock)
 	if err != nil {
 		if err.Error() == "Previous block can not be empty" {
 			return nil, ErrLedgerAlreadyInitialized
 		}
 		return nil, err
 	}
-	return blk, nil
+	return genesisBlock, nil
 }
 
 func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
@@ -118,8 +120,10 @@ func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
 }
 
 func (ld *Ledger) Receive(send *block.Block) (string, error) {
-	acc := ld.GetAccount(send.Link)
-
+	acc, err := ld.GetAccount(send.Link)
+	if err != nil {
+		return "", err
+	}
 	if acc == nil {
 		return "", ErrAccountNotManagedByThisLedger
 	}
@@ -142,11 +146,7 @@ func (ld *Ledger) createSendTransaction(fromTip *block.Block, to []byte, amount 
 	if err := ld.signAndPow(send); err != nil {
 		return nil, err
 	}
-	send, err := ld.bs.Store(send)
-	if err != nil {
-		return nil, err
-	}
-	return send.Hash, nil
+	return ld.saveTransaction(send)
 }
 
 func (ld *Ledger) createReceiveTransaction(send *block.Block) ([]byte, error) {
@@ -169,7 +169,10 @@ func (ld *Ledger) createReceiveTransaction(send *block.Block) ([]byte, error) {
 		return nil, ErrInvalidSendTransactionAddress
 	}
 
-	acc := ld.GetAccount(send.Link)
+	acc, err := ld.GetAccount(send.Link)
+	if err != nil {
+		return nil, err
+	}
 	if acc == nil {
 		return nil, ErrAccountNotManagedByThisLedger
 	}
@@ -200,12 +203,15 @@ func (ld *Ledger) createReceiveTransaction(send *block.Block) ([]byte, error) {
 		return nil, err
 	}
 
-	receive, err = ld.bs.Store(receive)
+	return ld.saveTransaction(receive)
+}
+
+func (ld *Ledger) saveTransaction(blk *block.Block) ([]byte, error) {
+	blk, err := ld.bs.Store(blk)
 	if err != nil {
 		return nil, err
 	}
-
-	return receive.Hash, nil
+	return blk.Hash, nil
 }
 
 func (ld *Ledger) signAndPow(blk *block.Block) (error) {
@@ -236,16 +242,23 @@ func (ld *Ledger) CreateAccount() (*Account, error) {
 	}
 
 	acc.Address = string(ad)
-	ld.AddAccount(acc)
+	err = ld.AddAccount(acc)
+	if err != nil {
+		return nil, err
+	}
 	return acc, nil
 }
 
-func (ld *Ledger) AddAccount(acc *Account) {
-	ld.accounts[acc.Address] = acc
+func (ld *Ledger) AddAccount(acc *Account) error {
+	return ld.accounts.Put(acc.Address, acc.ToBytes())
 }
 
-func (ld *Ledger) GetAccount(acc []byte) *Account {
-	return ld.accounts[string(acc)]
+func (ld *Ledger) GetAccount(address []byte) (*Account, error) {
+	acc, ok, err := ld.accounts.Get(string(address))
+	if !ok {
+		return nil, err
+	}
+	return NewAccountFromBytes(acc), nil
 }
 
 func (ld *Ledger) setPow(blk *block.Block) error {
@@ -268,7 +281,10 @@ func (ld *Ledger) sign(blk *block.Block) error {
 }
 
 func (ld *Ledger) getSignature(blk *block.Block) ([]byte, error) {
-	acc := ld.GetAccount(blk.Account)
+	acc, err := ld.GetAccount(blk.Account)
+	if err != nil {
+		return nil, err
+	}
 	if acc == nil {
 		return nil, ErrAccountNotManagedByThisLedger
 	}

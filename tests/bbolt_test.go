@@ -19,21 +19,21 @@ var _ = Describe("BoltKeyValueStore", func() {
 
 		path, err := os.Getwd()
 
-		options := &keyvaluestore.BoltKeyValueStoreOptions{DbFile:filepath.Join(path, "test.db")}
-		_, err = os.Stat(options.DbFile)
-		if err == nil {
-			os.Remove(options.DbFile)
-		}
+		bklStoreOptions := prepareOptions("BlockChain", filepath.Join(path, "test.db"))
+		blkStore := keyvaluestore.NewBoltKeyValueStore()
+		err = blkStore.Init(bklStoreOptions)
+		Expect(err).To(BeNil())
 
-		ms := keyvaluestore.NewBoltKeyValueStore()
-		err = ms.Init(options)
+		accStoreOptions := prepareOptions("Accounts", filepath.Join(path, "accounts-test.db"))
+		as := keyvaluestore.NewBoltKeyValueStore()
+		err = as.Init(accStoreOptions)
 		Expect(err).To(BeNil())
 
 		val := block.NewBlockValidatorCreator()
-		bs := blockstore.New(ms, val)
+		bs := blockstore.New(blkStore, val)
 
 		ld := ledger.New()
-		ld.Use(bs)
+		ld.Use(bs, as)
 
 		blk, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
@@ -66,4 +66,13 @@ var _ = Describe("BoltKeyValueStore", func() {
 		Expect(blockChain[11].Balance).To(Equal(float64(1000)))
 	})
 })
+
+func prepareOptions(bucketName, filepath string) *keyvaluestore.BoltKeyValueStoreOptions {
+	options := &keyvaluestore.BoltKeyValueStoreOptions{DbFile: filepath, BucketName: bucketName}
+	_, err := os.Stat(options.DbFile)
+	if err == nil {
+		os.Remove(options.DbFile)
+	}
+	return options
+}
 
