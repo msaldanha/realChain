@@ -3,6 +3,7 @@ package node
 import (
 	"net"
 	"github.com/msaldanha/realChain/ledger"
+	log "github.com/sirupsen/logrus"
 )
 
 type UdpServer struct {
@@ -14,6 +15,7 @@ func NewUdpServer(ld *ledger.Ledger) (*UdpServer) {
 }
 
 func (n *UdpServer) Run() (error) {
+	log.Info("Udp server starting")
 	service := ":1200"
 	udpAddr, err := net.ResolveUDPAddr("udp", service)
 	if err != nil {

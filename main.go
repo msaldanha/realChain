@@ -3,11 +3,12 @@ package main
 import (
 	"github.com/msaldanha/realChain/node"
 	"github.com/spf13/viper"
-	"fmt"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 
+	log.Info("Application starting")
 	config := viper.New()
 
 	config.SetConfigType("yaml")
@@ -22,7 +23,7 @@ func main() {
 
 	err := config.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		log.Fatalf("Error loading config file: %s \n", err)
 	}
 
 	node := node.New()

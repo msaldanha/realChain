@@ -12,7 +12,7 @@ import (
 	"crypto/elliptic"
 	"bytes"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"math"
 )
 
@@ -129,9 +129,11 @@ func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
 func (ld *Ledger) Receive(send *block.Block) (string, error) {
 	acc, err := ld.GetAccount(send.Link)
 	if err != nil {
+		logError("Receive", send, err)
 		return "", err
 	}
 	if acc == nil {
+		logError("Receive", send, ErrAccountNotManagedByThisLedger)
 		return "", ErrAccountNotManagedByThisLedger
 	}
 
@@ -151,11 +153,13 @@ func (ld *Ledger) HandleTransactionBytes(blkBytes []byte) (error) {
 func (ld *Ledger) HandleTransaction(blk *block.Block) (err error) {
 	err = nil
 	if ok, err := ld.verifyTransaction(blk, true); !ok {
+		logError("HandleTransaction", blk, err)
 		return err
 	}
 
 	_, err = ld.saveTransaction(blk)
 	if err != nil {
+		logError("HandleTransaction", blk, err)
 		return
 	}
 
@@ -582,4 +586,8 @@ func (ld *Ledger) getPreviousTransaction(blk *block.Block) (*block.Block, error)
 		return nil, ErrPreviousTransactionNotFound
 	}
 	return previous, nil
+}
+
+func logError(context string, blk *block.Block, err error) {
+	log.Printf("Ledger.%s failed: %s (tx: %s)", context, err, string(blk.Hash))
 }

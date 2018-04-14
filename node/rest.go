@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"github.com/msaldanha/realChain/keypair"
 	"github.com/msaldanha/realChain/block"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"github.com/msaldanha/realChain/Error"
 )
 
@@ -54,6 +54,7 @@ func NewRestServer(l *ledger.Ledger) *RestServer {
 }
 
 func (rs *RestServer) Run() error {
+	log.Info("Rest server starting")
 	rs.iris.Get("/wallet/accounts", rs.getAccounts())
 	rs.iris.Post("/wallet/accounts", rs.createAccount())
 	rs.iris.Get("/wallet/accounts/{address:string}", rs.getAccountByAddress())
@@ -64,6 +65,7 @@ func (rs *RestServer) Run() error {
 
 func (rs *RestServer) getAccountStatementByAddress() iris.Handler {
 	return func(ctx iris.Context) {
+		logRequest(ctx)
 		addr := ctx.Params().Get("address")
 		acc, err := rs.ld.GetAccountStatement(addr)
 
@@ -77,6 +79,7 @@ func (rs *RestServer) getAccountStatementByAddress() iris.Handler {
 
 func (rs *RestServer) getAccountByAddress() iris.Handler {
 	return func(ctx iris.Context) {
+		logRequest(ctx)
 		addr := ctx.Params().Get("address")
 		acc, err := rs.ld.GetAccount([]byte(addr))
 
@@ -108,6 +111,7 @@ func (rs *RestServer) getAccountByAddress() iris.Handler {
 
 func (rs *RestServer) getAccounts() iris.Handler {
 	return func(ctx iris.Context) {
+		logRequest(ctx)
 		acc, err := rs.ld.GetAccounts()
 
 		if hasError(ctx, err) {
@@ -133,6 +137,7 @@ func (rs *RestServer) getAccounts() iris.Handler {
 
 func (rs *RestServer) createAccount() iris.Handler {
 	return func(ctx iris.Context) {
+		logRequest(ctx)
 		acc, err := rs.ld.CreateAccount()
 
 		if hasError(ctx, err) {
@@ -144,6 +149,7 @@ func (rs *RestServer) createAccount() iris.Handler {
 
 func (rs *RestServer) sendFunds() iris.Handler {
 	return func(ctx iris.Context) {
+		logRequest(ctx)
 		send := &SendDto{}
 		ctx.ReadJSON(send)
 		id, err := rs.ld.Send(send.From, send.To, send.Amount)
@@ -197,10 +203,14 @@ func setError(ctx iris.Context, err error) {
 			ctx.StatusCode(500)
 		}
 	}
-	log.Println(err)
+	log.Error(err)
 	ctx.JSON(errorFor(err))
 }
 
 func errorFor(err error) *ErrorDto {
 	return &ErrorDto{Message: err.Error()}
+}
+
+func logRequest(ctx iris.Context) {
+	log.Infof("Rest request for %s", ctx.Path())
 }
