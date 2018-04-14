@@ -1,0 +1,4 @@
+ledger:
+  datafolder: ./data
+  chain: chain.db
+  accounts: accounts.db

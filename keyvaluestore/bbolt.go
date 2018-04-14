@@ -111,5 +111,16 @@ func (st *BoltKeyValueStore) Size() (size int) {
 }
 
 func (st *BoltKeyValueStore) GetAll() ([][]byte, error) {
-	return nil, nil
+	all := make([][]byte, 0)
+	err := st.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(st.BucketName))
+		b.ForEach(func(k, v []byte) error {
+			ret := make([]byte, len(v))
+			copy(ret, v)
+			all = append(all, ret)
+			return nil
+		})
+		return nil
+	})
+	return all, err
 }

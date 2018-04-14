@@ -4,10 +4,11 @@ import (
 	"github.com/kataras/iris"
 	"github.com/msaldanha/realChain/ledger"
 	"strings"
-	"log"
 	"encoding/hex"
 	"github.com/msaldanha/realChain/keypair"
 	"github.com/msaldanha/realChain/block"
+	"log"
+	"github.com/msaldanha/realChain/Error"
 )
 
 type RestServer struct {
@@ -190,9 +191,13 @@ func setError(ctx iris.Context, err error) {
 	if strings.Contains(err.Error(), "not found") {
 		ctx.StatusCode(404)
 	} else {
-		ctx.StatusCode(400)
-		log.Println(err)
+		if _, ok := err.(Error.Error); ok {
+			ctx.StatusCode(400)
+		} else {
+			ctx.StatusCode(500)
+		}
 	}
+	log.Println(err)
 	ctx.JSON(errorFor(err))
 }
 

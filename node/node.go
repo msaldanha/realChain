@@ -7,6 +7,15 @@ import (
 	"github.com/msaldanha/realChain/blockstore"
 	"fmt"
 	"os"
+	"path/filepath"
+	"github.com/spf13/viper"
+	"log"
+)
+
+const (
+	cfgDataFolder = "ledger.datafolder"
+	cfgChainFile = "ledger.chain"
+	cfgAccountsFile = "ledger.accounts"
 )
 
 type Node struct {
@@ -17,9 +26,9 @@ func New() (*Node) {
 	return &Node{}
 }
 
-func (n *Node) Run() {
+func (n *Node) Run(config *viper.Viper) {
 
-	ld, err := createLedger()
+	ld, err := createLedger(config)
 	checkError(err)
 
 	udp := NewUdpServer(ld)
@@ -49,11 +58,26 @@ func checkError(err error) {
 	}
 }
 
-func createLedger() (*ledger.Ledger, error) {
-	ms := keyvaluestore.NewMemoryKeyValueStore()
-	as := keyvaluestore.NewMemoryKeyValueStore()
+func createLedger(config *viper.Viper) (*ledger.Ledger, error) {
+
+	bklStoreOptions := prepareOptions("BlockChain",
+		filepath.Join(config.GetString(cfgDataFolder), config.GetString(cfgChainFile)))
+	blkStore := keyvaluestore.NewBoltKeyValueStore()
+	err := blkStore.Init(bklStoreOptions)
+	if err != nil {
+		log.Fatal("Failed to init ledger chain: " + err.Error())
+	}
+
+	accStoreOptions := prepareOptions("Accounts",
+		filepath.Join(config.GetString(cfgDataFolder), config.GetString(cfgAccountsFile)))
+	as := keyvaluestore.NewBoltKeyValueStore()
+	err = as.Init(accStoreOptions)
+	if err != nil {
+		log.Fatal("Failed to init ledger accounts" + err.Error())
+	}
+
 	val := block.NewBlockValidatorCreator()
-	bs := blockstore.New(ms, val)
+	bs := blockstore.New(blkStore, val)
 	ld := ledger.New()
 	ld.Use(bs, as)
 	if bs.IsEmpty() {
@@ -62,4 +86,9 @@ func createLedger() (*ledger.Ledger, error) {
 		}
 	}
 	return ld, nil
+}
+
+func prepareOptions(bucketName, filepath string) *keyvaluestore.BoltKeyValueStoreOptions {
+	options := &keyvaluestore.BoltKeyValueStoreOptions{DbFile: filepath, BucketName: bucketName}
+	return options
 }
