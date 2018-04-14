@@ -1,8 +1,8 @@
 package ledger
 
 import (
-	"github.com/msaldanha/realChain/blockstore"
-	"github.com/msaldanha/realChain/block"
+	"github.com/msaldanha/realChain/transactionstore"
+	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/keypair"
 	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/Error"
@@ -41,7 +41,7 @@ const (
 )
 
 type Ledger struct {
-	bs       *blockstore.BlockStore
+	ts       *transactionstore.TransactionStore
 	accounts keyvaluestore.Storer
 }
 
@@ -49,49 +49,49 @@ func New() (*Ledger) {
 	return &Ledger{}
 }
 
-func (ld *Ledger) Use(blockStore *blockstore.BlockStore, accountStore keyvaluestore.Storer) {
-	ld.bs = blockStore
+func (ld *Ledger) Use(txStore *transactionstore.TransactionStore, accountStore keyvaluestore.Storer) {
+	ld.ts = txStore
 	ld.accounts = accountStore
 }
 
-func (ld *Ledger) Initialize(initialBalance float64) (*block.Block, error) {
-	if !ld.bs.IsEmpty() {
+func (ld *Ledger) Initialize(initialBalance float64) (*transaction.Transaction, error) {
+	if !ld.ts.IsEmpty() {
 		return nil, ErrLedgerAlreadyInitialized
 	}
 
-	genesisBlock := ld.bs.CreateOpenBlock()
+	genesisTx := ld.ts.CreateOpenTransaction()
 	acc, err := ld.CreateAccount()
 	if err != nil {
 		return nil, err
 	}
-	genesisBlock.Account = []byte(acc.Address)
-	genesisBlock.Representative = genesisBlock.Account
-	genesisBlock.Balance = initialBalance
-	genesisBlock.PubKey = acc.Keys.PublicKey
+	genesisTx.Account = []byte(acc.Address)
+	genesisTx.Representative = genesisTx.Account
+	genesisTx.Balance = initialBalance
+	genesisTx.PubKey = acc.Keys.PublicKey
 
-	err = ld.setPow(genesisBlock)
+	err = ld.setPow(genesisTx)
 	if err != nil {
 		return nil, err
 	}
 
-	err = ld.sign(genesisBlock)
+	err = ld.sign(genesisTx)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = ld.saveTransaction(genesisBlock)
+	_, err = ld.saveTransaction(genesisTx)
 	if err != nil {
-		if err.Error() == "Previous block can not be empty" {
+		if err.Error() == "Previous transaction can not be empty" {
 			return nil, ErrLedgerAlreadyInitialized
 		}
 		return nil, err
 	}
-	log.Printf("Genesis account: %s", string(genesisBlock.Account))
-	return genesisBlock, nil
+	log.Printf("Genesis account: %s", string(genesisTx.Account))
+	return genesisTx, nil
 }
 
 func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
-	fromTipBlk, err := ld.bs.Retrieve(from)
+	fromTipTx, err := ld.ts.Retrieve(from)
 
 	if err != nil {
 		return "", err
@@ -106,11 +106,11 @@ func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
 		return "", ErrFromToMustBeDifferent
 	}
 
-	if fromTipBlk == nil {
+	if fromTipTx == nil {
 		return "", ErrFromAccountNotFound
 	}
 
-	if fromTipBlk.Balance < amount {
+	if fromTipTx.Balance < amount {
 		return "", ErrNotEnoughFunds
 	}
 
@@ -118,7 +118,7 @@ func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
 		return "", ErrAmountCantBeZero
 	}
 
-	hash, err := ld.createSendTransaction(fromTipBlk, []byte(to), amount)
+	hash, err := ld.createSendTransaction(fromTipTx, []byte(to), amount)
 	if err != nil {
 		return "", err
 	}
@@ -126,7 +126,7 @@ func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
 	return string(hash), nil
 }
 
-func (ld *Ledger) Receive(send *block.Block) (string, error) {
+func (ld *Ledger) Receive(send *transaction.Transaction) (string, error) {
 	acc, err := ld.GetAccount(send.Link)
 	if err != nil {
 		logError("Receive", send, err)
@@ -145,55 +145,55 @@ func (ld *Ledger) Receive(send *block.Block) (string, error) {
 	return string(hash), nil
 }
 
-func (ld *Ledger) HandleTransactionBytes(blkBytes []byte) (error) {
-	blk := block.NewBlockFromBytes(blkBytes)
-	return ld.HandleTransaction(blk)
+func (ld *Ledger) HandleTransactionBytes(txBytes []byte) (error) {
+	tx := transaction.NewTransactionFromBytes(txBytes)
+	return ld.HandleTransaction(tx)
 }
 
-func (ld *Ledger) HandleTransaction(blk *block.Block) (err error) {
+func (ld *Ledger) HandleTransaction(tx *transaction.Transaction) (err error) {
 	err = nil
-	if ok, err := ld.verifyTransaction(blk, true); !ok {
-		logError("HandleTransaction", blk, err)
+	if ok, err := ld.verifyTransaction(tx, true); !ok {
+		logError("HandleTransaction", tx, err)
 		return err
 	}
 
-	_, err = ld.saveTransaction(blk)
+	_, err = ld.saveTransaction(tx)
 	if err != nil {
-		logError("HandleTransaction", blk, err)
+		logError("HandleTransaction", tx, err)
 		return
 	}
 
-	if blk.Type == block.SEND {
-		acc, err := ld.GetAccount(blk.Link)
+	if tx.Type == transaction.SEND {
+		acc, err := ld.GetAccount(tx.Link)
 		if err != nil {
 			return err
 		}
 		if acc != nil {
-			_, err = ld.createReceiveTransaction(blk)
+			_, err = ld.createReceiveTransaction(tx)
 		}
 	}
 
 	return
 }
 
-func (ld *Ledger) GetLastTransaction(address string) (*block.Block, error) {
-	fromTipBlk, err := ld.bs.Retrieve(address)
+func (ld *Ledger) GetLastTransaction(address string) (*transaction.Transaction, error) {
+	fromTipTx, err := ld.ts.Retrieve(address)
 	if err != nil {
 		return nil, err
 	}
-	return fromTipBlk, nil
+	return fromTipTx, nil
 }
 
-func (ld *Ledger) GetAccountStatement(address string) ([]*block.Block, error) {
-	blockChain, err := ld.bs.GetBlockChain(address, false)
+func (ld *Ledger) GetAccountStatement(address string) ([]*transaction.Transaction, error) {
+	txChain, err := ld.ts.GetTransactionChain(address, false)
 	if err != nil {
 		return nil, err
 	}
-	return blockChain, nil
+	return txChain, nil
 }
 
-func (ld *Ledger) createSendTransaction(fromTip *block.Block, to []byte, amount float64) ([]byte, error) {
-	send := ld.bs.CreateSendBlock()
+func (ld *Ledger) createSendTransaction(fromTip *transaction.Transaction, to []byte, amount float64) ([]byte, error) {
+	send := ld.ts.CreateSendTransaction()
 	send.Account = fromTip.Account
 	send.Link = to
 	send.Previous = fromTip.Hash
@@ -209,8 +209,8 @@ func (ld *Ledger) createSendTransaction(fromTip *block.Block, to []byte, amount 
 	return send.Hash, nil
 }
 
-func (ld *Ledger) createReceiveTransaction(send *block.Block) ([]byte, error) {
-	prev, err := ld.bs.Retrieve(string(send.Previous))
+func (ld *Ledger) createReceiveTransaction(send *transaction.Transaction) ([]byte, error) {
+	prev, err := ld.ts.Retrieve(string(send.Previous))
 	if err != nil {
 		return nil, err
 	}
@@ -237,20 +237,20 @@ func (ld *Ledger) createReceiveTransaction(send *block.Block) ([]byte, error) {
 		return nil, ErrAccountNotManagedByThisLedger
 	}
 
-	receiveTip, err := ld.bs.Retrieve(string(send.Link))
+	receiveTip, err := ld.ts.Retrieve(string(send.Link))
 	if err != nil {
 		return nil, err
 	}
 
-	var receive *block.Block
+	var receive *transaction.Transaction
 	if receiveTip != nil {
-		receive = ld.bs.CreateReceiveBlock()
+		receive = ld.ts.CreateReceiveTransaction()
 		receive.Previous = receiveTip.Hash
 		receive.Balance = receiveTip.Balance + amount
 		receive.Representative = receiveTip.Representative
 		receive.PubKey = receiveTip.PubKey
 	} else {
-		receive = ld.bs.CreateOpenBlock()
+		receive = ld.ts.CreateOpenTransaction()
 		receive.Balance = amount
 		receive.Representative = send.Link
 		receive.PubKey = acc.Keys.PublicKey
@@ -271,21 +271,21 @@ func (ld *Ledger) createReceiveTransaction(send *block.Block) ([]byte, error) {
 	return receive.Hash, nil
 }
 
-func (ld *Ledger) saveTransaction(blk *block.Block) ([]byte, error) {
-	blk, err := ld.bs.Store(blk)
+func (ld *Ledger) saveTransaction(tx *transaction.Transaction) ([]byte, error) {
+	tx, err := ld.ts.Store(tx)
 	if err != nil {
 		return nil, err
 	}
-	return blk.Hash, nil
+	return tx.Hash, nil
 }
 
-func (ld *Ledger) signAndPow(blk *block.Block) (error) {
-	err := ld.setPow(blk)
+func (ld *Ledger) signAndPow(tx *transaction.Transaction) (error) {
+	err := ld.setPow(tx)
 	if err != nil {
 		return err
 	}
 
-	err = ld.sign(blk)
+	err = ld.sign(tx)
 	if err != nil {
 		return err
 	}
@@ -338,27 +338,27 @@ func (ld *Ledger) GetAccounts() ([]*Account, error) {
 	return accounts, nil
 }
 
-func (ld *Ledger) setPow(blk *block.Block) error {
-	nonce, hash, err := ld.bs.CalculatePow(blk)
+func (ld *Ledger) setPow(tx *transaction.Transaction) error {
+	nonce, hash, err := ld.ts.CalculatePow(tx)
 	if err != nil {
 		return err
 	}
-	blk.PowNonce = nonce
-	blk.Hash = hash
+	tx.PowNonce = nonce
+	tx.Hash = hash
 	return nil
 }
 
-func (ld *Ledger) sign(blk *block.Block) error {
-	signature, err := ld.getSignature(blk)
+func (ld *Ledger) sign(tx *transaction.Transaction) error {
+	signature, err := ld.getSignature(tx)
 	if err != nil {
 		return err
 	}
-	blk.Signature = signature
+	tx.Signature = signature
 	return nil
 }
 
-func (ld *Ledger) getSignature(blk *block.Block) ([]byte, error) {
-	acc, err := ld.GetAccount(blk.Account)
+func (ld *Ledger) getSignature(tx *transaction.Transaction) ([]byte, error) {
+	acc, err := ld.GetAccount(tx.Account)
 	if err != nil {
 		return nil, err
 	}
@@ -366,34 +366,34 @@ func (ld *Ledger) getSignature(blk *block.Block) ([]byte, error) {
 		return nil, ErrAccountNotManagedByThisLedger
 	}
 	privateKey := ld.getPrivateKey(acc)
-	r, s, err := ecdsa.Sign(rand.Reader, privateKey, blk.Hash)
+	r, s, err := ecdsa.Sign(rand.Reader, privateKey, tx.Hash)
 	if err != nil {
 		return nil, err
 	}
 	return append(r.Bytes(), s.Bytes()...), nil
 }
 
-func (ld *Ledger) verifySignature(blk *block.Block) bool {
+func (ld *Ledger) verifySignature(tx *transaction.Transaction) bool {
 	r := big.Int{}
 	s := big.Int{}
-	sigLen := len(blk.Signature)
-	r.SetBytes(blk.Signature[:(sigLen / 2)])
-	s.SetBytes(blk.Signature[(sigLen / 2):])
+	sigLen := len(tx.Signature)
+	r.SetBytes(tx.Signature[:(sigLen / 2)])
+	s.SetBytes(tx.Signature[(sigLen / 2):])
 
 	x := big.Int{}
 	y := big.Int{}
-	keyLen := len(blk.PubKey)
-	x.SetBytes(blk.PubKey[:(keyLen / 2)])
-	y.SetBytes(blk.PubKey[(keyLen / 2):])
+	keyLen := len(tx.PubKey)
+	x.SetBytes(tx.PubKey[:(keyLen / 2)])
+	y.SetBytes(tx.PubKey[(keyLen / 2):])
 
 	curve := elliptic.P256()
 	rawPubKey := ecdsa.PublicKey{curve, &x, &y}
 
-	return ecdsa.Verify(&rawPubKey, blk.Hash, &r, &s)
+	return ecdsa.Verify(&rawPubKey, tx.Hash, &r, &s)
 }
 
-func (ld *Ledger) verifyPow(blk *block.Block) bool {
-	ok, _ := ld.bs.VerifyPow(blk)
+func (ld *Ledger) verifyPow(tx *transaction.Transaction) bool {
+	ok, _ := ld.ts.VerifyPow(tx)
 	return ok
 }
 
@@ -413,18 +413,18 @@ func (ld *Ledger) getPrivateKey(acc *Account) *ecdsa.PrivateKey {
 	return &privateKey
 }
 
-func (ld *Ledger) verifyTransaction(blk *block.Block, isNew bool) (bool, error) {
-	if ok, err := ld.verifyAddress(blk); !ok {
+func (ld *Ledger) verifyTransaction(tx *transaction.Transaction, isNew bool) (bool, error) {
+	if ok, err := ld.verifyAddress(tx); !ok {
 		return false, err
 	}
-	if !ld.verifyPow(blk) {
+	if !ld.verifyPow(tx) {
 		return false, ErrInvalidTransactionHash
 	}
-	if !ld.verifySignature(blk) {
+	if !ld.verifySignature(tx) {
 		return false, ErrInvalidTransactionSignature
 	}
 
-	b, err := ld.bs.Retrieve(string(blk.Hash))
+	b, err := ld.ts.Retrieve(string(tx.Hash))
 	if err != nil {
 		return false, err
 	}
@@ -434,8 +434,8 @@ func (ld *Ledger) verifyTransaction(blk *block.Block, isNew bool) (bool, error) 
 		return false, ErrTransactionNotFound
 	}
 
-	if blk.Type != block.OPEN {
-		previous, err := ld.bs.Retrieve(string(blk.Previous))
+	if tx.Type != transaction.OPEN {
+		previous, err := ld.ts.Retrieve(string(tx.Previous))
 		if err != nil {
 			return false, err
 		}
@@ -443,7 +443,7 @@ func (ld *Ledger) verifyTransaction(blk *block.Block, isNew bool) (bool, error) 
 			return false, ErrPreviousTransactionNotFound
 		}
 		if isNew {
-			head, err := ld.bs.Retrieve(string(previous.Account))
+			head, err := ld.ts.Retrieve(string(previous.Account))
 			if err != nil {
 				return false, err
 			}
@@ -456,8 +456,8 @@ func (ld *Ledger) verifyTransaction(blk *block.Block, isNew bool) (bool, error) 
 		}
 	}
 
-	if blk.Type == block.OPEN || blk.Type == block.RECEIVE {
-		send, err := ld.bs.Retrieve(string(blk.Link))
+	if tx.Type == transaction.OPEN || tx.Type == transaction.RECEIVE {
+		send, err := ld.ts.Retrieve(string(tx.Link))
 		if err != nil {
 			return false, err
 		}
@@ -472,7 +472,7 @@ func (ld *Ledger) verifyTransaction(blk *block.Block, isNew bool) (bool, error) 
 			if !pending {
 				return false, ErrSendTransactionIsNotPending
 			}
-			head, err := ld.bs.Retrieve(string(send.Account))
+			head, err := ld.ts.Retrieve(string(send.Account))
 			if err != nil {
 				return false, err
 			}
@@ -486,7 +486,7 @@ func (ld *Ledger) verifyTransaction(blk *block.Block, isNew bool) (bool, error) 
 			if err != nil {
 				return false, err
 			}
-			receivedAmount, err := ld.findAbsoluteBalanceDiffWithPrevious(blk)
+			receivedAmount, err := ld.findAbsoluteBalanceDiffWithPrevious(tx)
 			if err != nil {
 				return false, err
 			}
@@ -496,89 +496,89 @@ func (ld *Ledger) verifyTransaction(blk *block.Block, isNew bool) (bool, error) 
 		}
 	}
 
-	open, _ := ld.getOpenTransaction(blk)
+	open, _ := ld.getOpenTransaction(tx)
 	if open == nil {
 		return false, ErrOpenTransactionNotFound
 	}
 	return true, nil
 }
 
-func (ld *Ledger) isPendingTransaction(blk *block.Block) (bool, error) {
-	if blk.Type != block.SEND {
+func (ld *Ledger) isPendingTransaction(tx *transaction.Transaction) (bool, error) {
+	if tx.Type != transaction.SEND {
 		return false, nil
 	}
-	target, err := ld.GetLastTransaction(string(blk.Link))
+	target, err := ld.GetLastTransaction(string(tx.Link))
 	if err != nil {
 		return false, err
 	}
 	if target == nil {
 		return true, nil
 	}
-	chain, err := ld.bs.GetBlockChain(string(target.Hash), false)
+	chain, err := ld.ts.GetTransactionChain(string(target.Hash), false)
 	if err != nil {
 		return false, err
 	}
 	for _, v := range chain {
-		if bytes.Equal(blk.Hash, v.Link) {
+		if bytes.Equal(tx.Hash, v.Link) {
 			return false, nil
 		}
 	}
 	return true, nil
 }
 
-func (ld *Ledger) findAbsoluteBalanceDiffWithPrevious(blk *block.Block) (float64, error) {
+func (ld *Ledger) findAbsoluteBalanceDiffWithPrevious(tx *transaction.Transaction) (float64, error) {
 	var amount float64 = 0
-	previous, err := ld.findPrevious(blk)
+	previous, err := ld.findPrevious(tx)
 	if err != nil {
 		return 0, err
 	}
 	if previous == nil {
 		return 0, err
 	}
-	if blk.Type == block.OPEN {
-		amount = blk.Balance
+	if tx.Type == transaction.OPEN {
+		amount = tx.Balance
 	} else {
-		amount = blk.Balance - previous.Balance
+		amount = tx.Balance - previous.Balance
 	}
 	return math.Abs(amount), nil
 }
 
-func (ld *Ledger) findPrevious(blk *block.Block) (*block.Block, error) {
-	if blk.Type != block.OPEN {
-		return ld.bs.Retrieve(string(blk.Previous))
+func (ld *Ledger) findPrevious(tx *transaction.Transaction) (*transaction.Transaction, error) {
+	if tx.Type != transaction.OPEN {
+		return ld.ts.Retrieve(string(tx.Previous))
 	}
-	return ld.bs.Retrieve(string(blk.Link))
+	return ld.ts.Retrieve(string(tx.Link))
 }
 
-func (ld *Ledger) verifyAddress(blk *block.Block) (bool, error) {
+func (ld *Ledger) verifyAddress(tx *transaction.Transaction) (bool, error) {
 	addr := address.New()
-	ad, err := addr.GenerateForKey(blk.PubKey)
+	ad, err := addr.GenerateForKey(tx.PubKey)
 	if err != nil {
 		return false, err
 	}
-	if ad != string(blk.Account) {
+	if ad != string(tx.Account) {
 		return false, ErrAccountDoesNotMatchPubKey
 	}
 	return true, nil
 }
 
-func (ld *Ledger) getOpenTransaction(blk *block.Block) (*block.Block, error) {
-	var ret = blk
+func (ld *Ledger) getOpenTransaction(tx *transaction.Transaction) (*transaction.Transaction, error) {
+	var ret = tx
 	var err error
-	for ret != nil && ret.Type != block.OPEN {
+	for ret != nil && ret.Type != transaction.OPEN {
 		ret, err = ld.getPreviousTransaction(ret)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if ret != nil && ret.Type == block.OPEN {
+	if ret != nil && ret.Type == transaction.OPEN {
 		return ret, nil
 	}
 	return nil, nil
 }
 
-func (ld *Ledger) getPreviousTransaction(blk *block.Block) (*block.Block, error) {
-	previous, err := ld.bs.Retrieve(string(blk.Previous))
+func (ld *Ledger) getPreviousTransaction(tx *transaction.Transaction) (*transaction.Transaction, error) {
+	previous, err := ld.ts.Retrieve(string(tx.Previous))
 	if err != nil {
 		return nil, err
 	}
@@ -588,6 +588,6 @@ func (ld *Ledger) getPreviousTransaction(blk *block.Block) (*block.Block, error)
 	return previous, nil
 }
 
-func logError(context string, blk *block.Block, err error) {
-	log.Printf("Ledger.%s failed: %s (tx: %s)", context, err, string(blk.Hash))
+func logError(context string, tx *transaction.Transaction, err error) {
+	log.Printf("Ledger.%s failed: %s (tx: %s)", context, err, string(tx.Hash))
 }

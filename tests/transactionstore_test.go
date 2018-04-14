@@ -3,142 +3,142 @@ package tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/msaldanha/realChain/block"
-	"github.com/msaldanha/realChain/blockstore"
+	"github.com/msaldanha/realChain/transaction"
+	"github.com/msaldanha/realChain/transactionstore"
 	"github.com/golang/mock/gomock"
 	"time"
 )
 
-var _ = Describe("BlockStore", func() {
+var _ = Describe("TransactionStore", func() {
 
-	It("Should not accept empty/partially filled block", func() {
+	It("Should not accept empty/partially filled transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := block.NewBlockValidatorCreator()
-		bs := blockstore.New(ms, val)
-		blk := &block.Block{}
-		blk, err := bs.Store(blk)
-		Expect(blk).To(BeNil())
+		val := transaction.NewValidatorCreator()
+		bs := transactionstore.New(ms, val)
+		tx := &transaction.Transaction{}
+		tx, err := bs.Store(tx)
+		Expect(tx).To(BeNil())
 		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(block.ErrInvalidBlockType))
+		Expect(err).To(Equal(transaction.ErrInvalidTransactionType))
 
-		blk = &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		tx = &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix(), PubKey: []byte("kkkkkkk")}
-		blk1, err := bs.Store(blk)
-		Expect(blk1).To(BeNil())
+		tx1, err := bs.Store(tx)
+		Expect(tx1).To(BeNil())
 		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(block.ErrBlockHashCantBeEmpty))
+		Expect(err).To(Equal(transaction.ErrTransactionHashCantBeEmpty))
 
-		blk.SetHash()
+		tx.SetHash()
 
-		dest := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		dest := &transaction.Transaction{Type: transaction.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
 		ms.Put("ddddddddddddd", dest.ToBytes())
 
-		blk, err = bs.Store(blk)
-		Expect(blk).NotTo(BeNil())
+		tx, err = bs.Store(tx)
+		Expect(tx).NotTo(BeNil())
 		Expect(err).To(BeNil())
 	})
 
-	It("Should accept properly filled block", func() {
+	It("Should accept properly filled transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := block.NewBlockValidatorCreator()
-		bs := blockstore.New(ms, val)
+		val := transaction.NewValidatorCreator()
+		bs := transactionstore.New(ms, val)
 
-		blk := &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		tx := &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
-		blk.SetHash()
+		tx.SetHash()
 
-		dest := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		dest := &transaction.Transaction{Type: transaction.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		ms.Put("ddddddddddddd", dest.ToBytes())
 
-		blk, err := bs.Store(blk)
+		tx, err := bs.Store(tx)
 		Expect(err).To(BeNil())
-		Expect(blk).NotTo(BeNil())
+		Expect(tx).NotTo(BeNil())
 
-		blockFromKeyStore, _, _ := ms.Get(string(blk.Hash))
-		Expect(block.NewBlockFromBytes(blockFromKeyStore)).To(Equal(blk))
+		txFromKeyStore, _, _ := ms.Get(string(tx.Hash))
+		Expect(transaction.NewTransactionFromBytes(txFromKeyStore)).To(Equal(tx))
 	})
 
-	It("Should calculate the PoW for the block", func() {
+	It("Should calculate the PoW for the transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := block.NewBlockValidatorCreator()
-		bs := blockstore.New(ms, val)
+		val := transaction.NewValidatorCreator()
+		bs := transactionstore.New(ms, val)
 
-		blk := &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		tx := &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		blk.SetHash()
+		tx.SetHash()
 
-		nonce, pow, err := bs.CalculatePow(blk)
+		nonce, pow, err := bs.CalculatePow(tx)
 		Expect(err).To(BeNil())
 
 		Expect(nonce).To(Equal(int64(33794)))
 		Expect(pow).To(Equal([]byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")))
 	})
 
-	It("Should verify the PoW for the block", func() {
+	It("Should verify the PoW for the transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := block.NewBlockValidatorCreator()
-		bs := blockstore.New(ms, val)
+		val := transaction.NewValidatorCreator()
+		bs := transactionstore.New(ms, val)
 
-		blk := &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		tx := &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		blk.SetHash()
+		tx.SetHash()
 
-		blk.PowNonce = int64(33794)
-		blk.Hash = []byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")
+		tx.PowNonce = int64(33794)
+		tx.Hash = []byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")
 
-		ok, err := bs.VerifyPow(blk)
+		ok, err := bs.VerifyPow(tx)
 		Expect(err).To(BeNil())
 		Expect(ok).To(BeTrue())
 
 	})
 
-	It("Should extract the chain for the block", func() {
+	It("Should extract the chain for the transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
 		ms := createNonEmptyMemoryStore()
-		val := block.NewBlockValidatorCreator()
-		bs := blockstore.New(ms, val)
+		val := transaction.NewValidatorCreator()
+		bs := transactionstore.New(ms, val)
 
-		open := &block.Block{Type: block.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		open := &transaction.Transaction{Type: transaction.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		open.SetHash()
 
-		blk, err := bs.Store(open)
+		tx, err := bs.Store(open)
 
-		blk = &block.Block{Type: block.SEND, Link: []byte("ddddddddddddd"), Previous: open.Hash,
+		tx = &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: open.Hash,
 			Signature: []byte("df0d25f706c31d2007ed91da185ac727e5e38bc77f4309bb587e1ff7557ace39"), Balance: 1,
 			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk"),
 		}
-		blk.SetHash()
+		tx.SetHash()
 
-		b :=  &block.Block{}
+		b :=  &transaction.Transaction{}
 		ms.Put("ddddddddddddd", b.ToBytes())
 
-		blk, err = bs.Store(blk)
+		tx, err = bs.Store(tx)
 
 		Expect(err).To(BeNil())
-		Expect(blk).NotTo(BeNil())
+		Expect(tx).NotTo(BeNil())
 
-		chain, err := bs.GetBlockChain(string(blk.Hash), true)
+		chain, err := bs.GetTransactionChain(string(tx.Hash), true)
 		Expect(err).To(BeNil())
 		Expect(len(chain)).To(Equal(2))
 

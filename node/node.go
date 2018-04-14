@@ -3,8 +3,8 @@ package node
 import (
 	"github.com/msaldanha/realChain/ledger"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"github.com/msaldanha/realChain/block"
-	"github.com/msaldanha/realChain/blockstore"
+	"github.com/msaldanha/realChain/transaction"
+	"github.com/msaldanha/realChain/transactionstore"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -60,10 +60,10 @@ func checkError(err error) {
 
 func createLedger(config *viper.Viper) (*ledger.Ledger, error) {
 
-	bklStoreOptions := prepareOptions("BlockChain",
+	bklStoreOptions := prepareOptions("TxChain",
 		filepath.Join(config.GetString(cfgDataFolder), config.GetString(cfgChainFile)))
-	blkStore := keyvaluestore.NewBoltKeyValueStore()
-	err := blkStore.Init(bklStoreOptions)
+	txStore := keyvaluestore.NewBoltKeyValueStore()
+	err := txStore.Init(bklStoreOptions)
 	if err != nil {
 		log.Fatal("Failed to init ledger chain: " + err.Error())
 	}
@@ -76,8 +76,8 @@ func createLedger(config *viper.Viper) (*ledger.Ledger, error) {
 		log.Fatal("Failed to init ledger accounts" + err.Error())
 	}
 
-	val := block.NewBlockValidatorCreator()
-	bs := blockstore.New(blkStore, val)
+	val := transaction.NewValidatorCreator()
+	bs := transactionstore.New(txStore, val)
 	ld := ledger.New()
 	ld.Use(bs, as)
 	if bs.IsEmpty() {

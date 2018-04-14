@@ -2,7 +2,7 @@ package tests
 
 import (
 	. "github.com/onsi/gomega"
-	. "github.com/msaldanha/realChain/block"
+	. "github.com/msaldanha/realChain/transaction"
 	"time"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"fmt"
@@ -12,68 +12,68 @@ import (
 	"github.com/msaldanha/realChain/ledger"
 )
 
-func assertCommonVal(val Validator, block *Block) {
-	ok, err := val.IsFilled(block)
+func assertCommonVal(val Validator, tx *Transaction) {
+	ok, err := val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(ErrInvalidBlockTimestamp))
+	Expect(err).To(Equal(ErrInvalidTransactionTimestamp))
 
-	block.Timestamp = time.Now().Unix()
+	tx.Timestamp = time.Now().Unix()
 
-	ok, err = val.IsFilled(block)
+	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(ErrBlockAccountCantBeEmpty))
+	Expect(err).To(Equal(ErrTransactionAccountCantBeEmpty))
 
-	block.Account = []byte("xxxxxxxxxxxxxxxxxxx")
+	tx.Account = []byte("xxxxxxxxxxxxxxxxxxx")
 
-	ok, err = val.IsFilled(block)
+	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(ErrPreviousBlockCantBeEmpty))
+	Expect(err).To(Equal(ErrPreviousTransactionCantBeEmpty))
 
-	block.Previous = []byte("yyyyyyyyyyyyyyyyyyyy")
+	tx.Previous = []byte("yyyyyyyyyyyyyyyyyyyy")
 
-	ok, err = val.IsFilled(block)
+	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(ErrBlockSignatureCantBeEmpty))
+	Expect(err).To(Equal(ErrTransactionSignatureCantBeEmpty))
 
-	block.Signature = []byte("ssssssssssssssssssssss")
+	tx.Signature = []byte("ssssssssssssssssssssss")
 
-	ok, err = val.IsFilled(block)
+	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(ErrBlockPowNonceCantBeZero))
+	Expect(err).To(Equal(ErrTransactionPowNonceCantBeZero))
 
-	block.PowNonce = 1
+	tx.PowNonce = 1
 
-	ok, err = val.IsFilled(block)
+	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(ErrBlockHashCantBeEmpty))
+	Expect(err).To(Equal(ErrTransactionHashCantBeEmpty))
 
-	block.SetHash()
+	tx.SetHash()
 
-	ok, err = val.IsFilled(block)
+	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
 	Expect(err).To(Equal(ErrPubKeyCantBeEmpty))
 
-	block.PubKey = []byte("ssssssssssssssssssssss")
+	tx.PubKey = []byte("ssssssssssssssssssssss")
 }
 
 func createNonEmptyMemoryStore() *keyvaluestore.MemoryKeyValueStore {
 	ms := keyvaluestore.NewMemoryKeyValueStore()
-	blk := &Block{}
-	ms.Put("genesis", blk.ToBytes())
+	tx := &Transaction{}
+	ms.Put("genesis", tx.ToBytes())
 	return ms
 }
 
-func dumpBlockChain(blockChain []*Block) {
-	fmt.Println("============= Block Chain Dump start =================")
+func dumpTxChain(txChain []*Transaction) {
+	fmt.Println("============= Transaction Chain Dump start =================")
 	level := 0
-	for _, v := range blockChain {
+	for _, v := range txChain {
 		if len(v.Previous) == 0 {
 			level = level + 1
 		}

@@ -1,4 +1,4 @@
-package block
+package transaction
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ const (
 	CHANGE
 )
 
-type Block struct {
+type Transaction struct {
 	Timestamp      int64
 	Type           Type
 	Account        []byte
@@ -53,7 +53,7 @@ func (bt Type) String() (string) {
 	return fmt.Sprintf("%d(%s)", int(bt), name)
 }
 
-func (b *Block) SetHash() (error) {
+func (b *Transaction) SetHash() (error) {
 	hash, err := b.GetHash()
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func (b *Block) SetHash() (error) {
 	return nil
 }
 
-func (b *Block) GetHash() ([]byte, error) {
+func (b *Transaction) GetHash() ([]byte, error) {
 	hashableBytes, err := b.GetHashableBytes()
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (b *Block) GetHash() ([]byte, error) {
 	return []byte(hex.EncodeToString(hash[:])), nil
 }
 
-func (b *Block) GetHashableBytes() ([][]byte, error) {
+func (b *Transaction) GetHashableBytes() ([][]byte, error) {
 	var balance bytes.Buffer
 	if err := binary.Write(&balance, binary.LittleEndian, b.Balance); err != nil {
 		return nil, err
@@ -82,16 +82,16 @@ func (b *Block) GetHashableBytes() ([][]byte, error) {
 		b.Previous, b.Link, balance.Bytes()}, nil
 }
 
-func (b *Block) ToBytes() []byte {
+func (b *Transaction) ToBytes() []byte {
 	var result bytes.Buffer
 	encoder := gob.NewEncoder(&result)
 	encoder.Encode(b)
 	return result.Bytes()
 }
 
-func NewBlockFromBytes(d []byte) *Block {
-	var block Block
+func NewTransactionFromBytes(d []byte) *Transaction {
+	var tx Transaction
 	decoder := gob.NewDecoder(bytes.NewReader(d))
-	decoder.Decode(&block)
-	return &block
+	decoder.Decode(&tx)
+	return &tx
 }

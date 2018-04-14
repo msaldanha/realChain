@@ -40,9 +40,9 @@ func (st *BoltKeyValueStore) Init(options interface{}) (error) {
 		return err
 	}
 
-	var blockchain *bolt.Bucket
+	var txchain *bolt.Bucket
 	db.Update(func(tx *bolt.Tx) error {
-		blockchain, err = tx.CreateBucketIfNotExists([]byte(opt.BucketName))
+		txchain, err = tx.CreateBucketIfNotExists([]byte(opt.BucketName))
 		if err != nil {
 			return err
 		}

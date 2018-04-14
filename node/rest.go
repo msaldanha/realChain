@@ -6,7 +6,7 @@ import (
 	"strings"
 	"encoding/hex"
 	"github.com/msaldanha/realChain/keypair"
-	"github.com/msaldanha/realChain/block"
+	"github.com/msaldanha/realChain/transaction"
 	log "github.com/sirupsen/logrus"
 	"github.com/msaldanha/realChain/Error"
 )
@@ -67,13 +67,13 @@ func (rs *RestServer) getAccountStatementByAddress() iris.Handler {
 	return func(ctx iris.Context) {
 		logRequest(ctx)
 		addr := ctx.Params().Get("address")
-		acc, err := rs.ld.GetAccountStatement(addr)
+		txs, err := rs.ld.GetAccountStatement(addr)
 
 		if hasError(ctx, err) {
 			return
 		}
 
-		ctx.JSON(mapToTransactionDtos(acc))
+		ctx.JSON(mapToTransactionDtos(txs))
 	}
 }
 
@@ -92,20 +92,20 @@ func (rs *RestServer) getAccountByAddress() iris.Handler {
 			acc.Keys = &keypair.KeyPair{}
 		}
 
-		blk, err := rs.ld.GetLastTransaction(addr)
+		tx, err := rs.ld.GetLastTransaction(addr)
 		if hasError(ctx, err) {
 			return
 		}
 
-		if blk == nil {
+		if tx == nil {
 			ctx.StatusCode(404)
 			return
 		}
 
-		acc.Address = string(blk.Account)
-		acc.Keys.PublicKey = blk.PubKey
+		acc.Address = string(tx.Account)
+		acc.Keys.PublicKey = tx.PubKey
 
-		ctx.JSON(mapToAccountDto(acc, blk.Balance))
+		ctx.JSON(mapToAccountDto(acc, tx.Balance))
 	}
 }
 
@@ -121,12 +121,12 @@ func (rs *RestServer) getAccounts() iris.Handler {
 		accounts := make([]*AccountDto, 0)
 		for _, v := range acc {
 			var balance float64 = 0
-			blk, err := rs.ld.GetLastTransaction(v.Address)
+			tx, err := rs.ld.GetLastTransaction(v.Address)
 			if hasError(ctx, err) {
 				return
 			}
-			if blk != nil {
-				balance = blk.Balance
+			if tx != nil {
+				balance = tx.Balance
 			}
 			accounts = append(accounts, mapToAccountDto(v, balance))
 		}
@@ -169,9 +169,9 @@ func mapToAccountDto(acc *ledger.Account, balance float64) *AccountDto {
 	return accDto
 }
 
-func mapToTransactionDtos(blockchain []*block.Block) []*TransactionDto {
+func mapToTransactionDtos(txchain []*transaction.Transaction) []*TransactionDto {
 	txs := make([]*TransactionDto, 0)
-	for _, v := range blockchain {
+	for _, v := range txchain {
 		tx := &TransactionDto{
 			Id:        string(v.Hash),
 			Type:      v.Type.String(),
