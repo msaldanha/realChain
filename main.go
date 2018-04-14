@@ -20,6 +20,8 @@ func main() {
 	config.SetDefault("ledger.datafolder", "./")
 	config.SetDefault("ledger.chain", "chain.db")
 	config.SetDefault("ledger.accounts", "accounts.db")
+	config.SetDefault("node.restserver", "localhost:1300")
+	config.SetDefault("node.udpserver", "localhost:1200")
 
 	err := config.ReadInConfig()
 	if err != nil {

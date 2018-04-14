@@ -8,16 +8,16 @@ import (
 
 type UdpServer struct {
 	ld *ledger.Ledger
+	url string
 }
 
-func NewUdpServer(ld *ledger.Ledger) (*UdpServer) {
-	return &UdpServer{ld: ld}
+func NewUdpServer(ld *ledger.Ledger, url string) (*UdpServer) {
+	return &UdpServer{ld: ld, url: url}
 }
 
 func (n *UdpServer) Run() (error) {
 	log.Info("Udp server starting")
-	service := ":1200"
-	udpAddr, err := net.ResolveUDPAddr("udp", service)
+	udpAddr, err := net.ResolveUDPAddr("udp", n.url)
 	if err != nil {
 		return err
 	}
@@ -27,6 +27,7 @@ func (n *UdpServer) Run() (error) {
 		return err
 	}
 
+	log.Infof("Udp server listening at %s", n.url)
 	for {
 		n.handleClient(conn)
 	}

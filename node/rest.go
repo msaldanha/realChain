@@ -14,6 +14,7 @@ import (
 type RestServer struct {
 	iris *iris.Application
 	ld   *ledger.Ledger
+	url  string
 }
 
 type KeyPairDto struct {
@@ -47,10 +48,9 @@ type TransactionDto struct {
 	Timestamp int64   `json:"timestamp"`
 }
 
-func NewRestServer(l *ledger.Ledger) *RestServer {
+func NewRestServer(l *ledger.Ledger, url string) *RestServer {
 	irisApp := iris.New()
-
-	return &RestServer{iris: irisApp, ld: l}
+	return &RestServer{iris: irisApp, ld: l, url: url}
 }
 
 func (rs *RestServer) Run() error {
@@ -60,7 +60,7 @@ func (rs *RestServer) Run() error {
 	rs.iris.Get("/wallet/accounts/{address:string}", rs.getAccountByAddress())
 	rs.iris.Get("/wallet/accounts/{address:string}/statement", rs.getAccountStatementByAddress())
 	rs.iris.Post("/wallet/tx", rs.sendFunds())
-	return rs.iris.Run(iris.Addr(":1300"), iris.WithoutServerError(iris.ErrServerClosed))
+	return rs.iris.Run(iris.Addr(rs.url), iris.WithoutServerError(iris.ErrServerClosed))
 }
 
 func (rs *RestServer) getAccountStatementByAddress() iris.Handler {
@@ -212,5 +212,5 @@ func errorFor(err error) *ErrorDto {
 }
 
 func logRequest(ctx iris.Context) {
-	log.Infof("Rest request for %s %s", ctx.Method(),  ctx.Path())
+	log.Infof("Rest request for %s %s", ctx.Method(), ctx.Path())
 }

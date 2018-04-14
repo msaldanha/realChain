@@ -2,3 +2,6 @@ ledger:
   datafolder: ./data
   chain: chain.db
   accounts: accounts.db
+node:
+  restserver: localhost:1300
+  udpserver: localhost:1200

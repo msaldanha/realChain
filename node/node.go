@@ -13,9 +13,11 @@ import (
 )
 
 const (
-	cfgDataFolder = "ledger.datafolder"
-	cfgChainFile = "ledger.chain"
+	cfgDataFolder   = "ledger.datafolder"
+	cfgChainFile    = "ledger.chain"
 	cfgAccountsFile = "ledger.accounts"
+	cfgRestServer   = "node.restserver"
+	cfgUdpServer    = "node.udpserver"
 )
 
 type Node struct {
@@ -31,20 +33,20 @@ func (n *Node) Run(config *viper.Viper) {
 	ld, err := createLedger(config)
 	checkError(err)
 
-	udp := NewUdpServer(ld)
-	rest := NewRestServer(ld)
+	udp := NewUdpServer(ld, config.GetString(cfgUdpServer))
+	rest := NewRestServer(ld, config.GetString(cfgRestServer))
 
 	udpch := make(chan error)
 	restch := make(chan error)
 
-	go func() {udpch <- udp.Run()}()
-	go func() {restch <- rest.Run()}()
+	go func() { udpch <- udp.Run() }()
+	go func() { restch <- rest.Run() }()
 
 	for {
 		select {
-		case eu := <- udpch:
+		case eu := <-udpch:
 			checkError(eu)
-		case er := <- restch:
+		case er := <-restch:
 			checkError(er)
 		}
 	}
