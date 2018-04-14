@@ -77,7 +77,7 @@ func dumpBlockChain(blockChain []*Block) {
 		if len(v.Previous) == 0 {
 			level = level + 1
 		}
-		fmt.Printf("%s %s %s %s %f\n", strings.Repeat("  ", level), v.Type, string(v.Account), string(v.Hash), v.Balance)
+		fmt.Printf("%s %s %s %s %s %f\n", strings.Repeat("  ", level), v.Type, string(v.Account), string(v.Hash), string(v.Previous), v.Balance)
 	}
 	fmt.Println("============= End =================")
 }

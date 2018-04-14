@@ -51,14 +51,14 @@ var _ = Describe("BoltKeyValueStore", func() {
 			sendHash, receiveHash = sendFunds(ld, bs, blk, receiveAcc.Address, 100)
 		}
 
-		blockChain, err := bs.GetBlockChain(sendHash)
+		blockChain, err := bs.GetBlockChain(sendHash, true)
 		dumpBlockChain(blockChain)
 		Expect(err).To(BeNil())
 		Expect(len(blockChain)).To(Equal(11))
 		Expect(blockChain[10].Type).To(Equal(block.SEND))
 		Expect(blockChain[10].Balance).To(Equal(float64(0)))
 
-		blockChain, err = bs.GetBlockChain(receiveHash)
+		blockChain, err = bs.GetBlockChain(receiveHash, true)
 		dumpBlockChain(blockChain)
 		Expect(err).To(BeNil())
 		Expect(len(blockChain)).To(Equal(12))

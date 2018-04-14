@@ -107,14 +107,14 @@ func (bs *BlockStore) CreateReceiveBlock() (*block.Block) {
 	return &block.Block{Type:block.RECEIVE, Timestamp: time.Now().Unix()}
 }
 
-func (bs *BlockStore) GetBlockChain(blockHash string) ([]*block.Block, error) {
+func (bs *BlockStore) GetBlockChain(blockHash string, includeAll bool) ([]*block.Block, error) {
 	blk, ok, _ := bs.GetBlock(blockHash)
 	chain := []*block.Block{}
 	for ok {
 		chain = append(chain[:0], append([]*block.Block{blk}, chain[0:]...)...)
 		if len(blk.Previous) > 0 {
 			blk, ok, _ = bs.GetBlock(string(blk.Previous))
-		} else if blk.Type == block.OPEN && len(blk.Link) > 0 {
+		} else if blk.Type == block.OPEN && len(blk.Link) > 0 && includeAll {
 			blk, ok, _ = bs.GetBlock(string(blk.Link))
 		} else {
 			break

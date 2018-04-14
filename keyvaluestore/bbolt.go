@@ -109,3 +109,7 @@ func (st *BoltKeyValueStore) Size() (size int) {
 	})
 	return
 }
+
+func (st *BoltKeyValueStore) GetAll() ([][]byte, error) {
+	return nil, nil
+}

@@ -138,7 +138,7 @@ var _ = Describe("BlockStore", func() {
 		Expect(err).To(BeNil())
 		Expect(blk).NotTo(BeNil())
 
-		chain, err := bs.GetBlockChain(string(blk.Hash))
+		chain, err := bs.GetBlockChain(string(blk.Hash), true)
 		Expect(err).To(BeNil())
 		Expect(len(chain)).To(Equal(2))
 

@@ -171,10 +171,11 @@ var _ = Describe("Ledger", func() {
 
 		Expect(sendBlk.Balance).To(Equal(float64(600)))
 
-		hash, err = ld.Receive(sendBlk)
+		receiveBlk, err := ld.GetLastTransaction(receiveAcc.Address)
 		Expect(err).To(BeNil())
+		Expect(receiveBlk).NotTo(BeNil())
 
-		blockChain, err := bs.GetBlockChain(hash)
+		blockChain, err := bs.GetBlockChain(string(receiveBlk.Hash), true)
 		Expect(err).To(BeNil())
 		Expect(len(blockChain)).To(Equal(3))
 
@@ -227,6 +228,44 @@ var _ = Describe("Ledger", func() {
 		hash, err = ld.Receive(sendBlk)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrInvalidTransactionSignature))
+		Expect(hash).To(Equal(""))
+	})
+
+	It("Should NOT receive funds from not pending send transaction", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
+		val := block.NewBlockValidatorCreator()
+		bs := blockstore.New(ms, val)
+
+		ld := ledger.New()
+		ld.Use(bs, as)
+
+		blk, err := ld.Initialize(1000)
+		Expect(err).To(BeNil())
+
+		receiveAcc := createTestAccount()
+
+		ld.AddAccount(receiveAcc)
+
+		blk, err = bs.Retrieve(string(blk.Hash))
+		Expect(err).To(BeNil())
+		Expect(blk).NotTo(BeNil())
+
+		hash, err := ld.Send(string(blk.Account), receiveAcc.Address, 400)
+		Expect(err).To(BeNil())
+
+		sendBlk, err := bs.Retrieve(hash)
+		Expect(err).To(BeNil())
+		Expect(sendBlk).NotTo(BeNil())
+
+		Expect(sendBlk.Balance).To(Equal(float64(600)))
+
+		hash, err = ld.Receive(sendBlk)
+		Expect(err).NotTo(BeNil())
+		Expect(err).To(Equal(ledger.ErrSendTransactionIsNotPending))
 		Expect(hash).To(Equal(""))
 	})
 
@@ -298,19 +337,106 @@ var _ = Describe("Ledger", func() {
 			sendHash, receiveHash = sendFunds(ld, bs, blk, receiveAcc.Address, 100)
 		}
 
-		blockChain, err := bs.GetBlockChain(sendHash)
+		blockChain, err := bs.GetBlockChain(sendHash, true)
 		dumpBlockChain(blockChain)
 		Expect(err).To(BeNil())
 		Expect(len(blockChain)).To(Equal(11))
 		Expect(blockChain[10].Type).To(Equal(block.SEND))
 		Expect(blockChain[10].Balance).To(Equal(float64(0)))
 
-		blockChain, err = bs.GetBlockChain(receiveHash)
+		blockChain, err = bs.GetBlockChain(receiveHash, true)
 		dumpBlockChain(blockChain)
 		Expect(err).To(BeNil())
 		Expect(len(blockChain)).To(Equal(12))
 		Expect(blockChain[11].Type).To(Equal(block.RECEIVE))
 		Expect(blockChain[11].Balance).To(Equal(float64(1000)))
+	})
+
+	It("Should produce a correct account statement", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
+		val := block.NewBlockValidatorCreator()
+		bs := blockstore.New(ms, val)
+
+		ld := ledger.New()
+		ld.Use(bs, as)
+
+		blk, err := ld.Initialize(1000)
+		Expect(err).To(BeNil())
+
+		receiveAcc := createTestAccount()
+
+		ld.AddAccount(receiveAcc)
+
+		blk, err = bs.Retrieve(string(blk.Hash))
+		Expect(err).To(BeNil())
+		Expect(blk).NotTo(BeNil())
+
+		var sendHash, receiveHash string
+		for x := 1; x <= 10; x++ {
+			sendHash, receiveHash = sendFunds(ld, bs, blk, receiveAcc.Address, 100)
+		}
+
+		blk, _, _ = bs.GetBlock(sendHash)
+		blockChain, err := ld.GetAccountStatement(string(blk.Account))
+		dumpBlockChain(blockChain)
+		Expect(err).To(BeNil())
+		Expect(len(blockChain)).To(Equal(11))
+		Expect(blockChain[0].Type).To(Equal(block.OPEN))
+		Expect(blockChain[0].Balance).To(Equal(float64(1000)))
+		Expect(blockChain[10].Type).To(Equal(block.SEND))
+		Expect(blockChain[10].Balance).To(Equal(float64(0)))
+
+		blk, _, _ = bs.GetBlock(receiveHash)
+		blockChain, err = ld.GetAccountStatement(string(blk.Account))
+		dumpBlockChain(blockChain)
+		Expect(err).To(BeNil())
+		Expect(len(blockChain)).To(Equal(10))
+		Expect(blockChain[0].Type).To(Equal(block.OPEN))
+		Expect(blockChain[0].Balance).To(Equal(float64(100)))
+		Expect(blockChain[9].Type).To(Equal(block.RECEIVE))
+		Expect(blockChain[9].Balance).To(Equal(float64(1000)))
+	})
+
+	It("Should return correct balance", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ms := keyvaluestore.NewMemoryKeyValueStore()
+		as := keyvaluestore.NewMemoryKeyValueStore()
+		val := block.NewBlockValidatorCreator()
+		bs := blockstore.New(ms, val)
+
+		ld := ledger.New()
+		ld.Use(bs, as)
+
+		blk, err := ld.Initialize(1000)
+		Expect(err).To(BeNil())
+
+		receiveAcc := createTestAccount()
+
+		ld.AddAccount(receiveAcc)
+
+		blk, err = bs.Retrieve(string(blk.Hash))
+		Expect(err).To(BeNil())
+		Expect(blk).NotTo(BeNil())
+
+		for x := 1; x <= 2; x++ {
+			sendFunds(ld, bs, blk, receiveAcc.Address, 100)
+		}
+
+		blk, err = ld.GetLastTransaction(string(blk.Account))
+		Expect(err).To(BeNil())
+		Expect(blk).NotTo(BeNil())
+		Expect(blk.Balance).To(Equal(float64(800)))
+
+		blk, err = ld.GetLastTransaction(receiveAcc.Address)
+		Expect(err).To(BeNil())
+		Expect(blk).NotTo(BeNil())
+		Expect(blk.Balance).To(Equal(float64(200)))
 	})
 })
 
@@ -321,8 +447,8 @@ func sendFunds(ld *ledger.Ledger, bs *blockstore.BlockStore, blk *block.Block, r
 	Expect(err).To(BeNil())
 	Expect(sendBlk).NotTo(BeNil())
 
-	receiveHash, err := ld.Receive(sendBlk)
+	receiveBlk, err := ld.GetLastTransaction(receiveAcc)
 	Expect(err).To(BeNil())
 
-	return sendHash, receiveHash
+	return sendHash, string(receiveBlk.Hash)
 }

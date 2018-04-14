@@ -39,3 +39,11 @@ func (st *MemoryKeyValueStore) IsEmpty() (bool) {
 func (st *MemoryKeyValueStore) Size() (int) {
 	return len(st.pairs)
 }
+
+func (st *MemoryKeyValueStore) GetAll() ([][]byte, error) {
+	all := make([][]byte, 0)
+	for _, v := range st.pairs {
+		all = append(all, v)
+	}
+	return all, nil
+}
