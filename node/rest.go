@@ -212,5 +212,5 @@ func errorFor(err error) *ErrorDto {
 }
 
 func logRequest(ctx iris.Context) {
-	log.Infof("Rest request for %s", ctx.Path())
+	log.Infof("Rest request for %s %s", ctx.Method(),  ctx.Path())
 }
