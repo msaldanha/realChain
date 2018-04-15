@@ -86,44 +86,43 @@ func (ld *Ledger) Initialize(initialBalance float64) (*transaction.Transaction, 
 		}
 		return nil, err
 	}
-	log.Printf("Genesis account: %s", string(genesisTx.Account))
 	return genesisTx, nil
 }
 
-func (ld *Ledger) Send(from, to string, amount float64) (string, error) {
+func (ld *Ledger) CreateSendTransaction(from, to string, amount float64) (*transaction.Transaction, error) {
 	fromTipTx, err := ld.ts.Retrieve(from)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	addr := address.New()
 	if valid, err := addr.IsValid(to); !valid {
-		return "", err
+		return nil, err
 	}
 
 	if from == to {
-		return "", ErrFromToMustBeDifferent
+		return nil, ErrFromToMustBeDifferent
 	}
 
 	if fromTipTx == nil {
-		return "", ErrFromAccountNotFound
+		return nil, ErrFromAccountNotFound
 	}
 
 	if fromTipTx.Balance < amount {
-		return "", ErrNotEnoughFunds
+		return nil, ErrNotEnoughFunds
 	}
 
 	if amount == 0 {
-		return "", ErrAmountCantBeZero
+		return nil, ErrAmountCantBeZero
 	}
 
-	hash, err := ld.createSendTransaction(fromTipTx, []byte(to), amount)
+	tx, err := ld.createSendTransaction(fromTipTx, []byte(to), amount)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(hash), nil
+	return tx, nil
 }
 
 func (ld *Ledger) Receive(send *transaction.Transaction) (string, error) {
@@ -192,7 +191,7 @@ func (ld *Ledger) GetAccountStatement(address string) ([]*transaction.Transactio
 	return txChain, nil
 }
 
-func (ld *Ledger) createSendTransaction(fromTip *transaction.Transaction, to []byte, amount float64) ([]byte, error) {
+func (ld *Ledger) createSendTransaction(fromTip *transaction.Transaction, to []byte, amount float64) (*transaction.Transaction, error) {
 	send := ld.ts.CreateSendTransaction()
 	send.Account = fromTip.Account
 	send.Link = to
@@ -202,11 +201,7 @@ func (ld *Ledger) createSendTransaction(fromTip *transaction.Transaction, to []b
 	if err := ld.signAndPow(send); err != nil {
 		return nil, err
 	}
-	err := ld.HandleTransaction(send)
-	if err != nil {
-		return nil, err
-	}
-	return send.Hash, nil
+	return send, nil
 }
 
 func (ld *Ledger) createReceiveTransaction(send *transaction.Transaction) ([]byte, error) {

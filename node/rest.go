@@ -41,6 +41,7 @@ type ErrorDto struct {
 
 type TransactionDto struct {
 	Id        string  `json:"id"`
+	Address   string  `json:"address"`
 	Type      string  `json:"type"`
 	Previous  string  `json:"previous"`
 	Balance   float64 `json:"balance"`
@@ -55,15 +56,15 @@ func NewRestServer(l *ledger.Ledger, url string) *RestServer {
 
 func (rs *RestServer) Run() error {
 	log.Info("Rest server starting")
-	rs.iris.Get("/wallet/accounts", rs.getAccounts())
-	rs.iris.Post("/wallet/accounts", rs.createAccount())
-	rs.iris.Get("/wallet/accounts/{address:string}", rs.getAccountByAddress())
-	rs.iris.Get("/wallet/accounts/{address:string}/statement", rs.getAccountStatementByAddress())
+	rs.iris.Get("/wallet/addresses", rs.getAddresses())
+	rs.iris.Post("/wallet/addresses", rs.createAddresses())
+	rs.iris.Get("/wallet/addresses/{address:string}", rs.getAccountByAddress())
+	rs.iris.Get("/wallet/addresses/{address:string}/statement", rs.getAddressesStatement())
 	rs.iris.Post("/wallet/tx", rs.sendFunds())
 	return rs.iris.Run(iris.Addr(rs.url), iris.WithoutServerError(iris.ErrServerClosed))
 }
 
-func (rs *RestServer) getAccountStatementByAddress() iris.Handler {
+func (rs *RestServer) getAddressesStatement() iris.Handler {
 	return func(ctx iris.Context) {
 		logRequest(ctx)
 		addr := ctx.Params().Get("address")
@@ -109,7 +110,7 @@ func (rs *RestServer) getAccountByAddress() iris.Handler {
 	}
 }
 
-func (rs *RestServer) getAccounts() iris.Handler {
+func (rs *RestServer) getAddresses() iris.Handler {
 	return func(ctx iris.Context) {
 		logRequest(ctx)
 		acc, err := rs.ld.GetAccounts()
@@ -135,7 +136,7 @@ func (rs *RestServer) getAccounts() iris.Handler {
 	}
 }
 
-func (rs *RestServer) createAccount() iris.Handler {
+func (rs *RestServer) createAddresses() iris.Handler {
 	return func(ctx iris.Context) {
 		logRequest(ctx)
 		acc, err := rs.ld.CreateAccount()
@@ -152,11 +153,15 @@ func (rs *RestServer) sendFunds() iris.Handler {
 		logRequest(ctx)
 		send := &SendDto{}
 		ctx.ReadJSON(send)
-		id, err := rs.ld.Send(send.From, send.To, send.Amount)
+		tx, err := rs.ld.CreateSendTransaction(send.From, send.To, send.Amount)
 		if hasError(ctx, err) {
 			return
 		}
-		send.TxId = id
+		err = rs.ld.HandleTransaction(tx)
+		if hasError(ctx, err) {
+			return
+		}
+		send.TxId = string(tx.Hash)
 		ctx.JSON(send)
 	}
 }
@@ -174,6 +179,7 @@ func mapToTransactionDtos(txchain []*transaction.Transaction) []*TransactionDto 
 	for _, v := range txchain {
 		tx := &TransactionDto{
 			Id:        string(v.Hash),
+			Address:   string(v.Account),
 			Type:      v.Type.String(),
 			Previous:  string(v.Previous),
 			Balance:   v.Balance,

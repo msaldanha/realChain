@@ -1,6 +1,7 @@
 package node
 
 import (
+	"github.com/msaldanha/realChain/config"
 	"github.com/msaldanha/realChain/ledger"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/transaction"
@@ -10,15 +11,10 @@ import (
 	"path/filepath"
 	"github.com/spf13/viper"
 	log "github.com/sirupsen/logrus"
+	"github.com/msaldanha/realChain/Error"
 )
 
-const (
-	cfgDataFolder   = "ledger.datafolder"
-	cfgChainFile    = "ledger.chain"
-	cfgAccountsFile = "ledger.accounts"
-	cfgRestServer   = "node.restserver"
-	cfgUdpServer    = "node.udpserver"
-)
+const ErrLedgerNotInitialized            = Error.Error("ledger not initialized")
 
 type Node struct {
 	ld *ledger.Ledger
@@ -28,13 +24,13 @@ func New() (*Node) {
 	return &Node{}
 }
 
-func (n *Node) Run(config *viper.Viper) {
+func (n *Node) Run(cfg *viper.Viper) {
 
-	ld, err := createLedger(config)
+	ld, err := createLedger(cfg)
 	checkError(err)
 
-	udp := NewUdpServer(ld, config.GetString(cfgUdpServer))
-	rest := NewRestServer(ld, config.GetString(cfgRestServer))
+	udp := NewUdpServer(ld, cfg.GetString(config.CfgUdpServer))
+	rest := NewRestServer(ld, cfg.GetString(config.CfgRestServer))
 
 	udpch := make(chan error)
 	restch := make(chan error)
@@ -60,10 +56,9 @@ func checkError(err error) {
 	}
 }
 
-func createLedger(config *viper.Viper) (*ledger.Ledger, error) {
-
+func createLedger(cfg *viper.Viper) (*ledger.Ledger, error) {
 	bklStoreOptions := prepareOptions("TxChain",
-		filepath.Join(config.GetString(cfgDataFolder), config.GetString(cfgChainFile)))
+		filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgChainFile)))
 	txStore := keyvaluestore.NewBoltKeyValueStore()
 	err := txStore.Init(bklStoreOptions)
 	if err != nil {
@@ -71,7 +66,7 @@ func createLedger(config *viper.Viper) (*ledger.Ledger, error) {
 	}
 
 	accStoreOptions := prepareOptions("Accounts",
-		filepath.Join(config.GetString(cfgDataFolder), config.GetString(cfgAccountsFile)))
+		filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgAccountsFile)))
 	as := keyvaluestore.NewBoltKeyValueStore()
 	err = as.Init(accStoreOptions)
 	if err != nil {
@@ -80,13 +75,13 @@ func createLedger(config *viper.Viper) (*ledger.Ledger, error) {
 
 	val := transaction.NewValidatorCreator()
 	bs := transactionstore.New(txStore, val)
+	if bs.IsEmpty() {
+		return nil, ErrLedgerNotInitialized
+	}
+
 	ld := ledger.New()
 	ld.Use(bs, as)
-	if bs.IsEmpty() {
-		if _, err := ld.Initialize(10000); err != nil {
-			return nil, err
-		}
-	}
+
 	return ld, nil
 }
 
