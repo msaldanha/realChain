@@ -48,7 +48,7 @@ var walletCreateAddressCmd = &cobra.Command{
 }
 
 var walletListAddressStatementCmd = &cobra.Command{
-	Use:   "statement [account address]",
+	Use:   "statement [address]",
 	Short: "Lists all transactions for [address]",
 	Long:  `Lists all transactions for [address]`,
 	Run: func(cmd *cobra.Command, args []string) {

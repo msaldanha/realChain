@@ -14,7 +14,7 @@ var _ = Describe("Transaction", func() {
 
 		tx := &Transaction{Type: RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Account: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"),
+			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"),
 			Timestamp: 1}
 
 		tx.SetHash()

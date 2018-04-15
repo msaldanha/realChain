@@ -22,7 +22,7 @@ type KeyPairDto struct {
 	PublicKey  string `json:"public_key"`
 }
 
-type AccountDto struct {
+type AddressDto struct {
 	Address string      `json:"address"`
 	Keys    *KeyPairDto `json:"keys"`
 	Balance float64     `json:"balance"`
@@ -58,7 +58,7 @@ func (rs *RestServer) Run() error {
 	log.Info("Rest server starting")
 	rs.iris.Get("/wallet/addresses", rs.getAddresses())
 	rs.iris.Post("/wallet/addresses", rs.createAddresses())
-	rs.iris.Get("/wallet/addresses/{address:string}", rs.getAccountByAddress())
+	rs.iris.Get("/wallet/addresses/{address:string}", rs.getAddressByAddress())
 	rs.iris.Get("/wallet/addresses/{address:string}/statement", rs.getAddressesStatement())
 	rs.iris.Post("/wallet/tx", rs.sendFunds())
 	return rs.iris.Run(iris.Addr(rs.url), iris.WithoutServerError(iris.ErrServerClosed))
@@ -68,7 +68,7 @@ func (rs *RestServer) getAddressesStatement() iris.Handler {
 	return func(ctx iris.Context) {
 		logRequest(ctx)
 		addr := ctx.Params().Get("address")
-		txs, err := rs.ld.GetAccountStatement(addr)
+		txs, err := rs.ld.GetAddressStatement(addr)
 
 		if hasError(ctx, err) {
 			return
@@ -78,18 +78,18 @@ func (rs *RestServer) getAddressesStatement() iris.Handler {
 	}
 }
 
-func (rs *RestServer) getAccountByAddress() iris.Handler {
+func (rs *RestServer) getAddressByAddress() iris.Handler {
 	return func(ctx iris.Context) {
 		logRequest(ctx)
 		addr := ctx.Params().Get("address")
-		acc, err := rs.ld.GetAccount([]byte(addr))
+		acc, err := rs.ld.GetAddress([]byte(addr))
 
 		if hasError(ctx, err) {
 			return
 		}
 
 		if acc == nil {
-			acc = &ledger.Account{}
+			acc = &ledger.Address{}
 			acc.Keys = &keypair.KeyPair{}
 		}
 
@@ -103,23 +103,23 @@ func (rs *RestServer) getAccountByAddress() iris.Handler {
 			return
 		}
 
-		acc.Address = string(tx.Account)
+		acc.Address = string(tx.Address)
 		acc.Keys.PublicKey = tx.PubKey
 
-		ctx.JSON(mapToAccountDto(acc, tx.Balance))
+		ctx.JSON(mapToAddressDto(acc, tx.Balance))
 	}
 }
 
 func (rs *RestServer) getAddresses() iris.Handler {
 	return func(ctx iris.Context) {
 		logRequest(ctx)
-		acc, err := rs.ld.GetAccounts()
+		acc, err := rs.ld.GetAddresses()
 
 		if hasError(ctx, err) {
 			return
 		}
 
-		accounts := make([]*AccountDto, 0)
+		addresses := make([]*AddressDto, 0)
 		for _, v := range acc {
 			var balance float64 = 0
 			tx, err := rs.ld.GetLastTransaction(v.Address)
@@ -129,22 +129,22 @@ func (rs *RestServer) getAddresses() iris.Handler {
 			if tx != nil {
 				balance = tx.Balance
 			}
-			accounts = append(accounts, mapToAccountDto(v, balance))
+			addresses = append(addresses, mapToAddressDto(v, balance))
 		}
 
-		ctx.JSON(accounts)
+		ctx.JSON(addresses)
 	}
 }
 
 func (rs *RestServer) createAddresses() iris.Handler {
 	return func(ctx iris.Context) {
 		logRequest(ctx)
-		acc, err := rs.ld.CreateAccount()
+		acc, err := rs.ld.CreateAddress()
 
 		if hasError(ctx, err) {
 			return
 		}
-		ctx.JSON(mapToAccountDto(acc, 0))
+		ctx.JSON(mapToAddressDto(acc, 0))
 	}
 }
 
@@ -166,12 +166,12 @@ func (rs *RestServer) sendFunds() iris.Handler {
 	}
 }
 
-func mapToAccountDto(acc *ledger.Account, balance float64) *AccountDto {
-	accDto := &AccountDto{Address: acc.Address, Keys: &KeyPairDto{}}
-	accDto.Keys.PublicKey = hex.EncodeToString(acc.Keys.PublicKey)
-	accDto.Keys.PrivateKey = hex.EncodeToString(acc.Keys.PrivateKey)
-	accDto.Balance = balance
-	return accDto
+func mapToAddressDto(acc *ledger.Address, balance float64) *AddressDto {
+	addrDto := &AddressDto{Address: acc.Address, Keys: &KeyPairDto{}}
+	addrDto.Keys.PublicKey = hex.EncodeToString(acc.Keys.PublicKey)
+	addrDto.Keys.PrivateKey = hex.EncodeToString(acc.Keys.PrivateKey)
+	addrDto.Balance = balance
+	return addrDto
 }
 
 func mapToTransactionDtos(txchain []*transaction.Transaction) []*TransactionDto {
@@ -179,7 +179,7 @@ func mapToTransactionDtos(txchain []*transaction.Transaction) []*TransactionDto 
 	for _, v := range txchain {
 		tx := &TransactionDto{
 			Id:        string(v.Hash),
-			Address:   string(v.Account),
+			Address:   string(v.Address),
 			Type:      v.Type.String(),
 			Previous:  string(v.Previous),
 			Balance:   v.Balance,

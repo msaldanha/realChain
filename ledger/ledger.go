@@ -17,13 +17,13 @@ import (
 )
 
 const (
-	ErrInvalidAccountBalance               = Error.Error("invalid account balance")
+	ErrInvalidAddressBalance               = Error.Error("invalid address balance")
 	ErrLedgerAlreadyInitialized            = Error.Error("ledger already initialized")
-	ErrFromToMustBeDifferent               = Error.Error("from and to accounts must be different")
-	ErrFromAccountNotFound                 = Error.Error("from account not found")
+	ErrFromToMustBeDifferent               = Error.Error("from and to addresses must be different")
+	ErrFromAddressNotFound                 = Error.Error("from address not found")
 	ErrNotEnoughFunds                      = Error.Error("not enough funds")
 	ErrAmountCantBeZero                    = Error.Error("amount cannot be zero")
-	ErrAccountNotManagedByThisLedger       = Error.Error("account not managed by this ledger")
+	ErrAddressNotManagedByThisLedger       = Error.Error("address not managed by this ledger")
 	ErrInvalidSendTransactionAddress       = Error.Error("invalid send transaction address")
 	ErrInvalidTransactionSignature         = Error.Error("invalid transaction signature")
 	ErrInvalidTransactionHash              = Error.Error("invalid transaction hash")
@@ -35,23 +35,23 @@ const (
 	ErrSendTransactionIsNotHead            = Error.Error("send transaction is not the chain head")
 	ErrSendTransactionIsNotPending         = Error.Error("send transaction is not pending")
 	ErrOpenTransactionNotFound             = Error.Error("open transaction not found")
-	ErrAccountDoesNotMatchPubKey           = Error.Error("account does not match public key")
+	ErrAddressDoesNotMatchPubKey           = Error.Error("address does not match public key")
 	ErrSendTransactionNotFound             = Error.Error("send transaction not found")
 	ErrSentAmountDiffersFromReceivedAmount = Error.Error("sent amount differs from received amount")
 )
 
 type Ledger struct {
-	ts       *transactionstore.TransactionStore
-	accounts keyvaluestore.Storer
+	ts        *transactionstore.TransactionStore
+	addresses keyvaluestore.Storer
 }
 
 func New() (*Ledger) {
 	return &Ledger{}
 }
 
-func (ld *Ledger) Use(txStore *transactionstore.TransactionStore, accountStore keyvaluestore.Storer) {
+func (ld *Ledger) Use(txStore *transactionstore.TransactionStore, addressStore keyvaluestore.Storer) {
 	ld.ts = txStore
-	ld.accounts = accountStore
+	ld.addresses = addressStore
 }
 
 func (ld *Ledger) Initialize(initialBalance float64) (*transaction.Transaction, error) {
@@ -60,14 +60,14 @@ func (ld *Ledger) Initialize(initialBalance float64) (*transaction.Transaction, 
 	}
 
 	genesisTx := ld.ts.CreateOpenTransaction()
-	acc, err := ld.CreateAccount()
+	addr, err := ld.CreateAddress()
 	if err != nil {
 		return nil, err
 	}
-	genesisTx.Account = []byte(acc.Address)
-	genesisTx.Representative = genesisTx.Account
+	genesisTx.Address = []byte(addr.Address)
+	genesisTx.Representative = genesisTx.Address
 	genesisTx.Balance = initialBalance
-	genesisTx.PubKey = acc.Keys.PublicKey
+	genesisTx.PubKey = addr.Keys.PublicKey
 
 	err = ld.setPow(genesisTx)
 	if err != nil {
@@ -106,7 +106,7 @@ func (ld *Ledger) CreateSendTransaction(from, to string, amount float64) (*trans
 	}
 
 	if fromTipTx == nil {
-		return nil, ErrFromAccountNotFound
+		return nil, ErrFromAddressNotFound
 	}
 
 	if fromTipTx.Balance < amount {
@@ -126,14 +126,14 @@ func (ld *Ledger) CreateSendTransaction(from, to string, amount float64) (*trans
 }
 
 func (ld *Ledger) Receive(send *transaction.Transaction) (string, error) {
-	acc, err := ld.GetAccount(send.Link)
+	addr, err := ld.GetAddress(send.Link)
 	if err != nil {
 		logError("Receive", send, err)
 		return "", err
 	}
-	if acc == nil {
-		logError("Receive", send, ErrAccountNotManagedByThisLedger)
-		return "", ErrAccountNotManagedByThisLedger
+	if addr == nil {
+		logError("Receive", send, ErrAddressNotManagedByThisLedger)
+		return "", ErrAddressNotManagedByThisLedger
 	}
 
 	hash, err := ld.createReceiveTransaction(send)
@@ -163,11 +163,11 @@ func (ld *Ledger) HandleTransaction(tx *transaction.Transaction) (err error) {
 	}
 
 	if tx.Type == transaction.SEND {
-		acc, err := ld.GetAccount(tx.Link)
+		addr, err := ld.GetAddress(tx.Link)
 		if err != nil {
 			return err
 		}
-		if acc != nil {
+		if addr != nil {
 			_, err = ld.createReceiveTransaction(tx)
 		}
 	}
@@ -183,7 +183,7 @@ func (ld *Ledger) GetLastTransaction(address string) (*transaction.Transaction, 
 	return fromTipTx, nil
 }
 
-func (ld *Ledger) GetAccountStatement(address string) ([]*transaction.Transaction, error) {
+func (ld *Ledger) GetAddressStatement(address string) ([]*transaction.Transaction, error) {
 	txChain, err := ld.ts.GetTransactionChain(address, false)
 	if err != nil {
 		return nil, err
@@ -193,7 +193,7 @@ func (ld *Ledger) GetAccountStatement(address string) ([]*transaction.Transactio
 
 func (ld *Ledger) createSendTransaction(fromTip *transaction.Transaction, to []byte, amount float64) (*transaction.Transaction, error) {
 	send := ld.ts.CreateSendTransaction()
-	send.Account = fromTip.Account
+	send.Address = fromTip.Address
 	send.Link = to
 	send.Previous = fromTip.Hash
 	send.Balance = fromTip.Balance - amount
@@ -216,7 +216,7 @@ func (ld *Ledger) createReceiveTransaction(send *transaction.Transaction) ([]byt
 
 	amount := prev.Balance - send.Balance
 	if amount <= 0 {
-		return nil, ErrInvalidAccountBalance
+		return nil, ErrInvalidAddressBalance
 	}
 
 	addr := address.New()
@@ -224,12 +224,12 @@ func (ld *Ledger) createReceiveTransaction(send *transaction.Transaction) ([]byt
 		return nil, ErrInvalidSendTransactionAddress
 	}
 
-	acc, err := ld.GetAccount(send.Link)
+	addr1, err := ld.GetAddress(send.Link)
 	if err != nil {
 		return nil, err
 	}
-	if acc == nil {
-		return nil, ErrAccountNotManagedByThisLedger
+	if addr1 == nil {
+		return nil, ErrAddressNotManagedByThisLedger
 	}
 
 	receiveTip, err := ld.ts.Retrieve(string(send.Link))
@@ -248,10 +248,10 @@ func (ld *Ledger) createReceiveTransaction(send *transaction.Transaction) ([]byt
 		receive = ld.ts.CreateOpenTransaction()
 		receive.Balance = amount
 		receive.Representative = send.Link
-		receive.PubKey = acc.Keys.PublicKey
+		receive.PubKey = addr1.Keys.PublicKey
 	}
 
-	receive.Account = send.Link
+	receive.Address = send.Link
 	receive.Link = send.Hash
 
 	if err := ld.signAndPow(receive); err != nil {
@@ -288,49 +288,49 @@ func (ld *Ledger) signAndPow(tx *transaction.Transaction) (error) {
 	return nil
 }
 
-func (ld *Ledger) CreateAccount() (*Account, error) {
+func (ld *Ledger) CreateAddress() (*Address, error) {
 	keys, err := keypair.New()
 	if err != nil {
 		return nil, err
 	}
 
-	acc := &Account{Keys: keys}
+	addr1 := &Address{Keys: keys}
 	addr := address.New()
-	ad, err := addr.GenerateForKey(acc.Keys.PublicKey)
+	ad, err := addr.GenerateForKey(addr1.Keys.PublicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	acc.Address = string(ad)
-	err = ld.AddAccount(acc)
+	addr1.Address = string(ad)
+	err = ld.AddAddress(addr1)
 	if err != nil {
 		return nil, err
 	}
-	return acc, nil
+	return addr1, nil
 }
 
-func (ld *Ledger) AddAccount(acc *Account) error {
-	return ld.accounts.Put(acc.Address, acc.ToBytes())
+func (ld *Ledger) AddAddress(addr *Address) error {
+	return ld.addresses.Put(addr.Address, addr.ToBytes())
 }
 
-func (ld *Ledger) GetAccount(address []byte) (*Account, error) {
-	acc, ok, err := ld.accounts.Get(string(address))
+func (ld *Ledger) GetAddress(address []byte) (*Address, error) {
+	addr, ok, err := ld.addresses.Get(string(address))
 	if !ok {
 		return nil, err
 	}
-	return NewAccountFromBytes(acc), nil
+	return NewAddressFromBytes(addr), nil
 }
 
-func (ld *Ledger) GetAccounts() ([]*Account, error) {
-	accs, err := ld.accounts.GetAll()
+func (ld *Ledger) GetAddresses() ([]*Address, error) {
+	addrs, err := ld.addresses.GetAll()
 	if err != nil {
 		return nil, err
 	}
-	accounts := make([]*Account, 0)
-	for _, v := range accs {
-		accounts = append(accounts, NewAccountFromBytes(v))
+	addresses := make([]*Address, 0)
+	for _, v := range addrs {
+		addresses = append(addresses, NewAddressFromBytes(v))
 	}
-	return accounts, nil
+	return addresses, nil
 }
 
 func (ld *Ledger) setPow(tx *transaction.Transaction) error {
@@ -353,14 +353,14 @@ func (ld *Ledger) sign(tx *transaction.Transaction) error {
 }
 
 func (ld *Ledger) getSignature(tx *transaction.Transaction) ([]byte, error) {
-	acc, err := ld.GetAccount(tx.Account)
+	addr, err := ld.GetAddress(tx.Address)
 	if err != nil {
 		return nil, err
 	}
-	if acc == nil {
-		return nil, ErrAccountNotManagedByThisLedger
+	if addr == nil {
+		return nil, ErrAddressNotManagedByThisLedger
 	}
-	privateKey := ld.getPrivateKey(acc)
+	privateKey := ld.getPrivateKey(addr)
 	r, s, err := ecdsa.Sign(rand.Reader, privateKey, tx.Hash)
 	if err != nil {
 		return nil, err
@@ -392,9 +392,9 @@ func (ld *Ledger) verifyPow(tx *transaction.Transaction) bool {
 	return ok
 }
 
-func (ld *Ledger) getPrivateKey(acc *Account) *ecdsa.PrivateKey {
+func (ld *Ledger) getPrivateKey(addr *Address) *ecdsa.PrivateKey {
 	D := new(big.Int)
-	D.SetBytes(acc.Keys.PrivateKey)
+	D.SetBytes(addr.Keys.PrivateKey)
 
 	curve := elliptic.P256()
 	privateKey := ecdsa.PrivateKey{
@@ -438,7 +438,7 @@ func (ld *Ledger) verifyTransaction(tx *transaction.Transaction, isNew bool) (bo
 			return false, ErrPreviousTransactionNotFound
 		}
 		if isNew {
-			head, err := ld.ts.Retrieve(string(previous.Account))
+			head, err := ld.ts.Retrieve(string(previous.Address))
 			if err != nil {
 				return false, err
 			}
@@ -467,7 +467,7 @@ func (ld *Ledger) verifyTransaction(tx *transaction.Transaction, isNew bool) (bo
 			if !pending {
 				return false, ErrSendTransactionIsNotPending
 			}
-			head, err := ld.ts.Retrieve(string(send.Account))
+			head, err := ld.ts.Retrieve(string(send.Address))
 			if err != nil {
 				return false, err
 			}
@@ -551,8 +551,8 @@ func (ld *Ledger) verifyAddress(tx *transaction.Transaction) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if ad != string(tx.Account) {
-		return false, ErrAccountDoesNotMatchPubKey
+	if ad != string(tx.Address) {
+		return false, ErrAddressDoesNotMatchPubKey
 	}
 	return true, nil
 }

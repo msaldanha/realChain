@@ -38,7 +38,7 @@ func (ts *TransactionStore) Store(tx *transaction.Transaction) (*transaction.Tra
 		return nil, err
 	}
 	ts.store.Put(string(tx.Hash), tx.ToBytes())
-	ts.store.Put(string(tx.Account), tx.ToBytes())
+	ts.store.Put(string(tx.Address), tx.ToBytes())
 	return tx, nil
 }
 

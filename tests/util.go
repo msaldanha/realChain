@@ -23,9 +23,9 @@ func assertCommonVal(val Validator, tx *Transaction) {
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(ErrTransactionAccountCantBeEmpty))
+	Expect(err).To(Equal(ErrTransactionAddressCantBeEmpty))
 
-	tx.Account = []byte("xxxxxxxxxxxxxxxxxxx")
+	tx.Address = []byte("xxxxxxxxxxxxxxxxxxx")
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
@@ -77,14 +77,14 @@ func dumpTxChain(txChain []*Transaction) {
 		if len(v.Previous) == 0 {
 			level = level + 1
 		}
-		fmt.Printf("%s %s %s %s %s %f\n", strings.Repeat("  ", level), v.Type, string(v.Account), string(v.Hash), string(v.Previous), v.Balance)
+		fmt.Printf("%s %s %s %s %s %f\n", strings.Repeat("  ", level), v.Type, string(v.Address), string(v.Hash), string(v.Previous), v.Balance)
 	}
 	fmt.Println("============= End =================")
 }
 
-func createTestAccount() *ledger.Account {
+func createTestAddress() *ledger.Address {
 	keys, _ := keypair.New()
-	acc := &ledger.Account{Keys: keys}
+	acc := &ledger.Address{Keys: keys}
 	addr := address.New()
 	ad, _ := addr.GenerateForKey(acc.Keys.PublicKey)
 	acc.Address = string(ad)

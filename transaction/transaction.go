@@ -22,7 +22,7 @@ const (
 type Transaction struct {
 	Timestamp      int64
 	Type           Type
-	Account        []byte
+	Address        []byte
 	Representative []byte
 	Previous       []byte
 	Link           []byte
@@ -78,7 +78,7 @@ func (b *Transaction) GetHashableBytes() ([][]byte, error) {
 		return nil, err
 	}
 	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
-	return [][]byte{timestamp, b.Account, b.Representative,
+	return [][]byte{timestamp, b.Address, b.Representative,
 		b.Previous, b.Link, balance.Bytes()}, nil
 }
 

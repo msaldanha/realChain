@@ -6,20 +6,20 @@ import (
 	"encoding/gob"
 )
 
-type Account struct {
+type Address struct {
 	Keys *keypair.KeyPair
 	Address string
 }
 
-func (acc *Account) ToBytes() []byte {
+func (a *Address) ToBytes() []byte {
 	var result bytes.Buffer
 	encoder := gob.NewEncoder(&result)
-	encoder.Encode(acc)
+	encoder.Encode(a)
 	return result.Bytes()
 }
 
-func NewAccountFromBytes(a []byte) *Account {
-	var acc Account
+func NewAddressFromBytes(a []byte) *Address {
+	var acc Address
 	decoder := gob.NewDecoder(bytes.NewReader(a))
 	decoder.Decode(&acc)
 	return &acc

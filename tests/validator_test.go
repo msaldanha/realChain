@@ -34,9 +34,9 @@ var _ = Describe("Validator", func() {
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(transaction.ErrTransactionAccountCantBeEmpty))
+		Expect(err).To(Equal(transaction.ErrTransactionAddressCantBeEmpty))
 
-		tx.Account = []byte("xxxxxxxxxxxxxxxxxxx")
+		tx.Address = []byte("xxxxxxxxxxxxxxxxxxx")
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
@@ -174,9 +174,9 @@ var _ = Describe("Validator", func() {
 		ok, err := val.IsValid(tx)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(transaction.ErrTransactionAccountCantBeEmpty))
+		Expect(err).To(Equal(transaction.ErrTransactionAddressCantBeEmpty))
 
-		tx.Account = []byte("aaaaaaaaaa")
+		tx.Address = []byte("aaaaaaaaaa")
 
 		ok, err = val.IsValid(tx)
 		Expect(err).To(BeNil())
@@ -190,7 +190,7 @@ var _ = Describe("Validator", func() {
 		ms := createNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.SEND, ms)
 		tx := &transaction.Transaction{Type: transaction.SEND, Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
+			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		tx.SetHash()
 
 		ok, err := val.IsValid(tx)
@@ -213,7 +213,7 @@ var _ = Describe("Validator", func() {
 		ms := createNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.RECEIVE, ms)
 		tx := &transaction.Transaction{Type: transaction.RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
+			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		tx.SetHash()
 
 		ok, err := val.IsValid(tx)
@@ -222,7 +222,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).To(Equal(transaction.ErrSourceNotFound))
 
 		source := &transaction.Transaction{Type: transaction.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
+			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		ms.Put("ddddddddddddd", source.ToBytes())
 
 		ok, err = val.IsValid(tx)
@@ -245,7 +245,7 @@ var _ = Describe("Validator", func() {
 		ms := createNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.CHANGE, ms)
 		tx := &transaction.Transaction{Type: transaction.CHANGE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Account:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
+			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		tx.SetHash()
 
 		ok, err := val.IsValid(tx)

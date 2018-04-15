@@ -65,12 +65,12 @@ func createLedger(cfg *viper.Viper) (*ledger.Ledger, error) {
 		log.Fatal("Failed to init ledger chain: " + err.Error())
 	}
 
-	accStoreOptions := prepareOptions("Accounts",
-		filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgAccountsFile)))
+	accStoreOptions := prepareOptions("Addresses",
+		filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgAddressesFile)))
 	as := keyvaluestore.NewBoltKeyValueStore()
 	err = as.Init(accStoreOptions)
 	if err != nil {
-		log.Fatal("Failed to init ledger accounts" + err.Error())
+		log.Fatal("Failed to init ledger addresses" + err.Error())
 	}
 
 	val := transaction.NewValidatorCreator()

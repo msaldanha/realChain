@@ -37,14 +37,14 @@ var ledgerInitCmd = &cobra.Command{
 		}
 
 		accStoreOptions := &keyvaluestore.BoltKeyValueStoreOptions{
-			DbFile: filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgAccountsFile)),
-			BucketName: "Accounts",
+			DbFile: filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgAddressesFile)),
+			BucketName: "Addresses",
 		}
 
 		as := keyvaluestore.NewBoltKeyValueStore()
 		err = as.Init(accStoreOptions)
 		if err != nil {
-			log.Fatal("Failed to init ledger accounts" + err.Error())
+			log.Fatal("Failed to init ledger addresses" + err.Error())
 		}
 
 		val := transaction.NewValidatorCreator()
@@ -73,6 +73,6 @@ var ledgerInitCmd = &cobra.Command{
 			fmt.Printf("Falied to initialize the Ledger: %s\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("Ledger successfuly initialized. Genesis account: %s, Start balance: %f", string(tx.Account), startAmount)
+		fmt.Printf("Ledger successfuly initialized. Genesis address: %s, Start balance: %f", string(tx.Address), startAmount)
 	},
 }

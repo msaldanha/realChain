@@ -72,7 +72,7 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Account), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
+		tx, err = ld.CreateSendTransaction(string(tx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
 		Expect(err).To(BeNil())
 
 		err = ld.HandleTransaction(tx)
@@ -104,7 +104,7 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Account), "xxxxxxxxxx", 300)
+		tx, err = ld.CreateSendTransaction(string(tx.Address), "xxxxxxxxxx", 300)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(address.ErrInvalidChecksum))
 		Expect(tx).To(BeNil())
@@ -129,7 +129,7 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx1, err := ld.CreateSendTransaction(string(tx.Account), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 1200)
+		tx1, err := ld.CreateSendTransaction(string(tx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 1200)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrNotEnoughFunds))
 		Expect(tx1).To(BeNil())
@@ -153,15 +153,15 @@ var _ = Describe("Ledger", func() {
 		tx, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAccount()
+		receiveAcc := createTestAddress()
 
-		ld.AddAccount(receiveAcc)
+		ld.AddAddress(receiveAcc)
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Account), receiveAcc.Address, 400)
+		tx, err = ld.CreateSendTransaction(string(tx.Address), receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
 		err = ld.HandleTransaction(tx)
@@ -200,15 +200,15 @@ var _ = Describe("Ledger", func() {
 		tx, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAccount()
+		receiveAcc := createTestAddress()
 
-		ld.AddAccount(receiveAcc)
+		ld.AddAddress(receiveAcc)
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Account), receiveAcc.Address, 400)
+		tx, err = ld.CreateSendTransaction(string(tx.Address), receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
 		err = ld.HandleTransaction(tx)
@@ -251,15 +251,15 @@ var _ = Describe("Ledger", func() {
 		tx, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAccount()
+		receiveAcc := createTestAddress()
 
-		ld.AddAccount(receiveAcc)
+		ld.AddAddress(receiveAcc)
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Account), receiveAcc.Address, 400)
+		tx, err = ld.CreateSendTransaction(string(tx.Address), receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
 		err = ld.HandleTransaction(tx)
@@ -277,7 +277,7 @@ var _ = Describe("Ledger", func() {
 		Expect(hash).To(Equal(""))
 	})
 
-	It("Should NOT accept transaction when account does not match pub key", func() {
+	It("Should NOT accept transaction when address does not match pub key", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
@@ -292,15 +292,15 @@ var _ = Describe("Ledger", func() {
 		tx, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAccount()
+		receiveAcc := createTestAddress()
 
-		ld.AddAccount(receiveAcc)
+		ld.AddAddress(receiveAcc)
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Account), receiveAcc.Address, 400)
+		tx, err = ld.CreateSendTransaction(string(tx.Address), receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
 		err = ld.HandleTransaction(tx)
@@ -316,7 +316,7 @@ var _ = Describe("Ledger", func() {
 
 		hash, err := ld.Receive(sendTx)
 		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(ledger.ErrAccountDoesNotMatchPubKey))
+		Expect(err).To(Equal(ledger.ErrAddressDoesNotMatchPubKey))
 		Expect(hash).To(Equal(""))
 	})
 
@@ -335,9 +335,9 @@ var _ = Describe("Ledger", func() {
 		tx, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAccount()
+		receiveAcc := createTestAddress()
 
-		ld.AddAccount(receiveAcc)
+		ld.AddAddress(receiveAcc)
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
@@ -363,7 +363,7 @@ var _ = Describe("Ledger", func() {
 		Expect(txChain[11].Balance).To(Equal(float64(1000)))
 	})
 
-	It("Should produce a correct account statement", func() {
+	It("Should produce a correct address statement", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
@@ -378,9 +378,9 @@ var _ = Describe("Ledger", func() {
 		tx, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAccount()
+		receiveAcc := createTestAddress()
 
-		ld.AddAccount(receiveAcc)
+		ld.AddAddress(receiveAcc)
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
@@ -392,7 +392,7 @@ var _ = Describe("Ledger", func() {
 		}
 
 		tx, _, _ = bs.GetTransaction(sendHash)
-		txChain, err := ld.GetAccountStatement(string(tx.Account))
+		txChain, err := ld.GetAddressStatement(string(tx.Address))
 		dumpTxChain(txChain)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(11))
@@ -402,7 +402,7 @@ var _ = Describe("Ledger", func() {
 		Expect(txChain[10].Balance).To(Equal(float64(0)))
 
 		tx, _, _ = bs.GetTransaction(receiveHash)
-		txChain, err = ld.GetAccountStatement(string(tx.Account))
+		txChain, err = ld.GetAddressStatement(string(tx.Address))
 		dumpTxChain(txChain)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(10))
@@ -427,9 +427,9 @@ var _ = Describe("Ledger", func() {
 		tx, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAccount()
+		receiveAcc := createTestAddress()
 
-		ld.AddAccount(receiveAcc)
+		ld.AddAddress(receiveAcc)
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
@@ -439,7 +439,7 @@ var _ = Describe("Ledger", func() {
 			sendFunds(ld, bs, tx, receiveAcc.Address, 100)
 		}
 
-		tx, err = ld.GetLastTransaction(string(tx.Account))
+		tx, err = ld.GetLastTransaction(string(tx.Address))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 		Expect(tx.Balance).To(Equal(float64(800)))
@@ -452,7 +452,7 @@ var _ = Describe("Ledger", func() {
 })
 
 func sendFunds(ld *ledger.Ledger, bs *transactionstore.TransactionStore, tx *transaction.Transaction, receiveAcc string, amount float64) (string, string) {
-	sendTx, err := ld.CreateSendTransaction(string(tx.Account), receiveAcc, amount)
+	sendTx, err := ld.CreateSendTransaction(string(tx.Address), receiveAcc, amount)
 	Expect(err).To(BeNil())
 
 	err = ld.HandleTransaction(sendTx)

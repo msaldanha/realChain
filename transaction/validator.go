@@ -8,7 +8,7 @@ import (
 const (
 	ErrInvalidTransactionType               = Error.Error("invalid transaction type")
 	ErrInvalidTransactionTimestamp          = Error.Error("invalid transaction timestamp")
-	ErrTransactionAccountCantBeEmpty        = Error.Error("transaction account can not be empty")
+	ErrTransactionAddressCantBeEmpty        = Error.Error("transaction address can not be empty")
 	ErrPreviousTransactionCantBeEmpty       = Error.Error("previous transaction can not be empty")
 	ErrTransactionSignatureCantBeEmpty      = Error.Error("transaction signature can not be empty")
 	ErrTransactionPowNonceCantBeZero        = Error.Error("transaction PoW nonce can not be zero")
@@ -82,8 +82,8 @@ func (v *BaseValidator) IsFilled(tx *Transaction) (bool, error) {
 	if tx.Timestamp <= 0 {
 		return false, ErrInvalidTransactionTimestamp
 	}
-	if len(tx.Account) == 0 {
-		return false, ErrTransactionAccountCantBeEmpty
+	if len(tx.Address) == 0 {
+		return false, ErrTransactionAddressCantBeEmpty
 	}
 	if len(tx.Previous) == 0 && !v.store.IsEmpty() && tx.Type != OPEN {
 		return false, ErrPreviousTransactionCantBeEmpty

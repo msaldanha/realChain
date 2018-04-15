@@ -24,7 +24,7 @@ func init() {
 
 	cfg.SetDefault(config.CfgDataFolder, "./")
 	cfg.SetDefault(config.CfgChainFile, "chain.db")
-	cfg.SetDefault(config.CfgAccountsFile, "accounts.db")
+	cfg.SetDefault(config.CfgAddressesFile, "addresses.db")
 	cfg.SetDefault(config.CfgRestServer, "localhost:1300")
 	cfg.SetDefault(config.CfgUdpServer, "localhost:1200")
 

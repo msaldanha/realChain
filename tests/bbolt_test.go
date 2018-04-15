@@ -24,7 +24,7 @@ var _ = Describe("BoltKeyValueStore", func() {
 		err = txStore.Init(bklStoreOptions)
 		Expect(err).To(BeNil())
 
-		accStoreOptions := prepareOptions("Accounts", filepath.Join(path, "accounts-test.db"))
+		accStoreOptions := prepareOptions("Addresses", filepath.Join(path, "addresses-test.db"))
 		as := keyvaluestore.NewBoltKeyValueStore()
 		err = as.Init(accStoreOptions)
 		Expect(err).To(BeNil())
@@ -38,9 +38,9 @@ var _ = Describe("BoltKeyValueStore", func() {
 		tx, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAccount()
+		receiveAcc := createTestAddress()
 
-		ld.AddAccount(receiveAcc)
+		ld.AddAddress(receiveAcc)
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
