@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/gob"
+	"github.com/davecgh/go-xdr/xdr2"
 )
 
 type Type int16
@@ -84,14 +84,14 @@ func (b *Transaction) GetHashableBytes() ([][]byte, error) {
 
 func (b *Transaction) ToBytes() []byte {
 	var result bytes.Buffer
-	encoder := gob.NewEncoder(&result)
+	encoder := xdr.NewEncoder(&result)
 	encoder.Encode(b)
 	return result.Bytes()
 }
 
 func NewTransactionFromBytes(d []byte) *Transaction {
 	var tx Transaction
-	decoder := gob.NewDecoder(bytes.NewReader(d))
+	decoder := xdr.NewDecoder(bytes.NewReader(d))
 	decoder.Decode(&tx)
 	return &tx
 }
