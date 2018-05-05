@@ -67,48 +67,6 @@ var _ = Describe("TransactionStore", func() {
 		Expect(transaction.NewTransactionFromBytes(txFromKeyStore)).To(Equal(tx))
 	})
 
-	It("Should calculate the PoW for the transaction", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
-		defer mockCtrl.Finish()
-
-		ms := createNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator()
-		bs := transactionstore.New(ms, val)
-
-		tx := &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
-			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
-			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		tx.SetHash()
-
-		nonce, pow, err := bs.CalculatePow(tx)
-		Expect(err).To(BeNil())
-
-		Expect(nonce).To(Equal(int64(33794)))
-		Expect(pow).To(Equal([]byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")))
-	})
-
-	It("Should verify the PoW for the transaction", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
-		defer mockCtrl.Finish()
-
-		ms := createNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator()
-		bs := transactionstore.New(ms, val)
-
-		tx := &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
-			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
-			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
-		tx.SetHash()
-
-		tx.PowNonce = int64(33794)
-		tx.Hash = []byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")
-
-		ok, err := bs.VerifyPow(tx)
-		Expect(err).To(BeNil())
-		Expect(ok).To(BeTrue())
-
-	})
-
 	It("Should extract the chain for the transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()

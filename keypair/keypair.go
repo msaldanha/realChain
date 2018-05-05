@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"math/big"
 )
 
 type KeyPair struct {
@@ -19,4 +20,25 @@ func New() (*KeyPair, error) {
 	}
 	pubKey := append(private.PublicKey.X.Bytes(), private.PublicKey.Y.Bytes()...)
 	return &KeyPair{PrivateKey:private.D.Bytes(), PublicKey:pubKey}, nil
+}
+
+func (ld *KeyPair) ToEcdsaPrivateKey() *ecdsa.PrivateKey {
+	D := new(big.Int)
+	D.SetBytes(ld.PrivateKey)
+
+	curve := elliptic.P256()
+	privateKey := ecdsa.PrivateKey{
+		PublicKey: ecdsa.PublicKey{
+			Curve: curve,
+			X: new(big.Int),
+			Y: new(big.Int),
+		},
+		D: D,
+	}
+
+	privateKey.PublicKey.X.SetBytes(ld.PublicKey[:len(ld.PublicKey)/2])
+	privateKey.PublicKey.Y.SetBytes(ld.PublicKey[len(ld.PublicKey)/2:])
+
+	//privateKey.PublicKey.X, privateKey.PublicKey.Y = curve.ScalarBaseMult(D.Bytes())
+	return &privateKey
 }

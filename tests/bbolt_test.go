@@ -32,10 +32,9 @@ var _ = Describe("BoltKeyValueStore", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(txStore, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		ld := ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		receiveAcc := createTestAddress()
@@ -47,8 +46,9 @@ var _ = Describe("BoltKeyValueStore", func() {
 		Expect(tx).NotTo(BeNil())
 
 		var sendHash, receiveHash string
+		prevTx := tx
 		for x := 1; x <= 10; x++ {
-			sendHash, receiveHash = sendFunds(ld, bs, tx, receiveAcc.Address, 100)
+			prevTx, sendHash, receiveHash = sendFunds(ld, addr, prevTx, receiveAcc.Address, 100)
 		}
 
 		txChain, err := bs.GetTransactionChain(sendHash, true)

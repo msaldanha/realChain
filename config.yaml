@@ -3,5 +3,8 @@ ledger:
   chain: chain.db
   addresses: addresses.db
 node:
-  restserver: localhost:1300
-  udpserver: localhost:1200
+  restserver: '127.0.0.1:1300'
+  network:
+    local: '127.0.0.1:4001'
+    peers:
+      - '127.0.0.1:4002'

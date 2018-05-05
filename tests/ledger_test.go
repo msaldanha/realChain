@@ -21,10 +21,10 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, _, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		tx, err = bs.Retrieve(string(tx.Hash))
@@ -41,14 +41,14 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, _, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.Initialize(1000)
+		tx, _, err = ld.Initialize(1000)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrLedgerAlreadyInitialized))
 	})
@@ -62,20 +62,20 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
+		tx, err = CreateSendTransaction(tx, addr, "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
 		Expect(err).To(BeNil())
 
-		err = ld.HandleTransaction(tx)
+		_, err = ld.HandleTransaction(tx)
 		Expect(err).To(BeNil())
 
 		tx, err = bs.Retrieve(string(tx.Hash))
@@ -94,17 +94,19 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Address), "xxxxxxxxxx", 300)
+		tx, err = CreateSendTransaction(tx, addr, "xxxxxxxxxx", 300)
+
+		tx, err = ld.HandleTransaction(tx)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(address.ErrInvalidChecksum))
 		Expect(tx).To(BeNil())
@@ -119,17 +121,19 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		tx, err = bs.Retrieve(string(tx.Hash))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx1, err := ld.CreateSendTransaction(string(tx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 1200)
+		tx1, err := CreateSendTransaction(tx, addr, "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 1200)
+
+		tx1, err = ld.HandleTransaction(tx1)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrNotEnoughFunds))
 		Expect(tx1).To(BeNil())
@@ -147,10 +151,10 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		receiveAcc := createTestAddress()
@@ -161,10 +165,10 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Address), receiveAcc.Address, 400)
+		tx, err = CreateSendTransaction(tx, addr, receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
-		err = ld.HandleTransaction(tx)
+		_, err = ld.HandleTransaction(tx)
 		Expect(err).To(BeNil())
 
 		sendTx, err := bs.Retrieve(string(tx.Hash))
@@ -194,10 +198,10 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		receiveAcc := createTestAddress()
@@ -208,10 +212,10 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Address), receiveAcc.Address, 400)
+		tx, err = CreateSendTransaction(tx, addr, receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
-		err = ld.HandleTransaction(tx)
+		_, err = ld.HandleTransaction(tx)
 		Expect(err).To(BeNil())
 
 		sendTx, err := bs.Retrieve(string(tx.Hash))
@@ -245,10 +249,10 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		receiveAcc := createTestAddress()
@@ -259,10 +263,10 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Address), receiveAcc.Address, 400)
+		tx, err = CreateSendTransaction(tx, addr, receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
-		err = ld.HandleTransaction(tx)
+		_, err = ld.HandleTransaction(tx)
 		Expect(err).To(BeNil())
 
 		sendTx, err := bs.Retrieve(string(tx.Hash))
@@ -286,10 +290,10 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		receiveAcc := createTestAddress()
@@ -300,10 +304,10 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
-		tx, err = ld.CreateSendTransaction(string(tx.Address), receiveAcc.Address, 400)
+		tx, err = CreateSendTransaction(tx, addr, receiveAcc.Address, 400)
 		Expect(err).To(BeNil())
 
-		err = ld.HandleTransaction(tx)
+		_, err = ld.HandleTransaction(tx)
 		Expect(err).To(BeNil())
 
 		sendTx, err := bs.Retrieve(string(tx.Hash))
@@ -329,10 +333,10 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		receiveAcc := createTestAddress()
@@ -344,8 +348,9 @@ var _ = Describe("Ledger", func() {
 		Expect(tx).NotTo(BeNil())
 
 		var sendHash, receiveHash string
+		prevTx := tx
 		for x := 1; x <= 10; x++ {
-			sendHash, receiveHash = sendFunds(ld, bs, tx, receiveAcc.Address, 100)
+			prevTx, sendHash, receiveHash = sendFunds(ld, addr, prevTx, receiveAcc.Address, 100)
 		}
 
 		txChain, err := bs.GetTransactionChain(sendHash, true)
@@ -372,10 +377,10 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		receiveAcc := createTestAddress()
@@ -387,8 +392,9 @@ var _ = Describe("Ledger", func() {
 		Expect(tx).NotTo(BeNil())
 
 		var sendHash, receiveHash string
+		prevTx := tx
 		for x := 1; x <= 10; x++ {
-			sendHash, receiveHash = sendFunds(ld, bs, tx, receiveAcc.Address, 100)
+			prevTx, sendHash, receiveHash = sendFunds(ld, addr, prevTx, receiveAcc.Address, 100)
 		}
 
 		tx, _, _ = bs.GetTransaction(sendHash)
@@ -421,10 +427,10 @@ var _ = Describe("Ledger", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		ld := ledger.New()
-		ld.Use(bs, as)
+		var ld ledger.Ledger
+		ld = ledger.NewLocalLedger(bs, as)
 
-		tx, err := ld.Initialize(1000)
+		tx, addr, err := ld.Initialize(1000)
 		Expect(err).To(BeNil())
 
 		receiveAcc := createTestAddress()
@@ -435,8 +441,9 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 
+		prevTx := tx
 		for x := 1; x <= 2; x++ {
-			sendFunds(ld, bs, tx, receiveAcc.Address, 100)
+			prevTx, _, _ = sendFunds(ld, addr, prevTx, receiveAcc.Address, 100)
 		}
 
 		tx, err = ld.GetLastTransaction(string(tx.Address))
@@ -451,11 +458,11 @@ var _ = Describe("Ledger", func() {
 	})
 })
 
-func sendFunds(ld *ledger.Ledger, bs *transactionstore.TransactionStore, tx *transaction.Transaction, receiveAcc string, amount float64) (string, string) {
-	sendTx, err := ld.CreateSendTransaction(string(tx.Address), receiveAcc, amount)
+func sendFunds(ld ledger.Ledger, addr *address.Address, tx *transaction.Transaction, receiveAcc string, amount float64) (*transaction.Transaction, string, string) {
+	sendTx, err := CreateSendTransaction(tx, addr, receiveAcc, amount)
 	Expect(err).To(BeNil())
 
-	err = ld.HandleTransaction(sendTx)
+	_, err = ld.HandleTransaction(sendTx)
 	Expect(err).To(BeNil())
 
 	Expect(sendTx).NotTo(BeNil())
@@ -463,5 +470,5 @@ func sendFunds(ld *ledger.Ledger, bs *transactionstore.TransactionStore, tx *tra
 	receiveTx, err := ld.GetLastTransaction(receiveAcc)
 	Expect(err).To(BeNil())
 
-	return string(sendTx.Hash), string(receiveTx.Hash)
+	return sendTx, string(sendTx.Hash), string(receiveTx.Hash)
 }

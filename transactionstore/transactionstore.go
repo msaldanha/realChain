@@ -3,17 +3,7 @@ package transactionstore
 import (
 	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"math/big"
-	"bytes"
-	"math"
-	"crypto/sha256"
-	"encoding/binary"
-	"log"
-	"encoding/hex"
-	"time"
 )
-
-const targetBits int16 = 16
 
 type TransactionStore struct {
 	store            keyvaluestore.Storer
@@ -50,62 +40,6 @@ func (ts *TransactionStore) Retrieve(hash string) (*transaction.Transaction, err
 	return value, nil
 }
 
-func (ts *TransactionStore) CalculatePow(tx *transaction.Transaction) (int64, []byte, error) {
-	var hashInt big.Int
-	var hash [32]byte
-	var nonce int64 = 0
-
-	target := getTarget()
-
-	data, err := tx.GetHashableBytes()
-	if err != nil {
-		return 0, nil, err
-	}
-
-	for nonce < math.MaxInt64 {
-		dataWithNonce := append(data, int64ToBytes(nonce))
-		hash = sha256.Sum256(bytes.Join(dataWithNonce, []byte{}))
-		hashInt.SetBytes(hash[:])
-
-		if hashInt.Cmp(target) == -1 {
-			break
-		} else {
-			nonce++
-		}
-	}
-
-	hexHash := []byte(hex.EncodeToString(hash[:]))
-
-	return nonce, hexHash[:], nil
-}
-
-func (ts *TransactionStore) VerifyPow(tx *transaction.Transaction) (bool, error) {
-	var hashInt big.Int
-
-	target := getTarget()
-
-	data, err := tx.GetHashableBytes()
-	if err != nil {
-		return false, err
-	}
-	dataWithNonce := append(data, int64ToBytes(tx.PowNonce))
-	hash := sha256.Sum256(bytes.Join(dataWithNonce, []byte{}))
-	hashInt.SetBytes(hash[:])
-
-	return hashInt.Cmp(target) == -1, nil
-}
-
-func (ts *TransactionStore) CreateOpenTransaction() (*transaction.Transaction) {
-	return &transaction.Transaction{Type: transaction.OPEN, Timestamp: time.Now().Unix()}
-}
-
-func (ts *TransactionStore) CreateSendTransaction() (*transaction.Transaction) {
-	return &transaction.Transaction{Type: transaction.SEND, Timestamp: time.Now().Unix()}
-}
-
-func (ts *TransactionStore) CreateReceiveTransaction() (*transaction.Transaction) {
-	return &transaction.Transaction{Type: transaction.RECEIVE, Timestamp: time.Now().Unix()}
-}
 
 func (ts *TransactionStore) GetTransactionChain(txHash string, includeAll bool) ([]*transaction.Transaction, error) {
 	tx, ok, _ := ts.GetTransaction(txHash)
@@ -123,7 +57,6 @@ func (ts *TransactionStore) GetTransactionChain(txHash string, includeAll bool) 
 	return chain, nil
 }
 
-
 func (ts *TransactionStore) GetTransaction(txHash string) (*transaction.Transaction, bool, error) {
 	tx, ok, err := ts.store.Get(txHash)
 	if tx == nil {
@@ -135,20 +68,3 @@ func (ts *TransactionStore) GetTransaction(txHash string) (*transaction.Transact
 func (ts *TransactionStore) IsEmpty() (bool) {
 	return ts.store.IsEmpty()
 }
-
-func getTarget() (*big.Int) {
-	target := big.NewInt(1)
-	target.Lsh(target, uint(256-targetBits))
-	return target
-}
-
-func int64ToBytes(num int64) []byte {
-	buff := new(bytes.Buffer)
-	err := binary.Write(buff, binary.BigEndian, num)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return buff.Bytes()
-}
-
