@@ -1,10 +1,15 @@
+datafolder: ./data
 ledger:
-  datafolder: ./data
   chain: chain.db
   addresses: addresses.db
+wallet:
+  chain: wchain.db
+  addresses: waddresses.db
+  restserver: '127.0.0.1:3999'
 node:
-  restserver: '127.0.0.1:1300'
+  restserver: '127.0.0.1:4000'
   network:
     local: '127.0.0.1:4001'
     peers:
       - '127.0.0.1:4002'
+      - '127.0.0.1:4003'

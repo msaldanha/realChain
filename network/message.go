@@ -10,18 +10,26 @@ const (
 	Version int32 = 0x0
 )
 
-type message struct {
+type Message struct {
 	Magic    int32
 	Version  int32
 	EndPoint string
 	Payload  []byte
 }
 
-func NewMessage() *message {
-	return &message{Magic:Magic, Version:Version}
+func NewMessage() *Message {
+	return &Message{Magic:Magic, Version:Version}
 }
 
-func (b *message) ToBytes() []byte {
+
+func NewMessageFromBytes(d []byte) *Message {
+	var msg Message
+	decoder := xdr.NewDecoder(bytes.NewReader(d))
+	decoder.Decode(&msg)
+	return &msg
+}
+
+func (b *Message) ToBytes() []byte {
 	var result bytes.Buffer
 	encoder := xdr.NewEncoder(&result)
 	encoder.Encode(b)

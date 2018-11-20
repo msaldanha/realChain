@@ -16,8 +16,11 @@ func NewPeer(url string, conn *net.UDPConn) (*Peer, error) {
 	return &Peer{conn: conn, addr: addr, url: url}, nil
 }
 
-func (p *Peer) Send(data []byte) error {
-	_, err := p.conn.WriteToUDP(data, p.addr)
+func (p *Peer) Send(endPoint string, data []byte) error {
+	msg := NewMessage()
+	msg.EndPoint = endPoint
+	msg.Payload = data
+	_, err := p.conn.WriteToUDP(msg.ToBytes(), p.addr)
 	return err
 }
 

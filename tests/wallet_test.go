@@ -9,26 +9,23 @@ import (
 	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/wallet"
+	"github.com/msaldanha/realChain/ledger"
 )
+
+var ts *transactionstore.TransactionStore
 
 var _ = Describe("Wallet", func() {
 	It("Should send funds if acc has funds to send", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := keyvaluestore.NewMemoryKeyValueStore()
-		as := keyvaluestore.NewMemoryKeyValueStore()
-		val := transaction.NewValidatorCreator()
-		ts := transactionstore.New(ms, val)
+		ld := NewMockLedger(mockCtrl)
 
-		firstTx, addr := createFirstTx()
+		wa, firstTx, _ := createWallet(ld)
 
-		as.Put(addr.Address, addr.ToBytes())
-		ts.Store(firstTx)
+		ld.EXPECT().HandleTransaction(gomock.Any())
 
-		ld := wallet.New(ts, as)
-
-		tx, err := ld.CreateSendTransaction(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
+		tx, err := wa.SendFunds(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
 		Expect(err).To(BeNil())
 
 		tx, err = ts.Retrieve(string(tx.Hash))
@@ -36,6 +33,77 @@ var _ = Describe("Wallet", func() {
 		Expect(tx).NotTo(BeNil())
 
 		Expect(tx.Balance).To(Equal(float64(700)))
+	})
+
+	It("Should NOT send funds if acc has not enough funds to send", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ld := NewMockLedger(mockCtrl)
+
+		wa, firstTx, _ := createWallet(ld)
+
+		ld.EXPECT().HandleTransaction(gomock.Any()).MaxTimes(0)
+
+		tx, err := wa.SendFunds(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 1300)
+		Expect(err).NotTo(BeNil())
+		Expect(err).To(Equal(ledger.ErrNotEnoughFunds))
+		Expect(tx).To(BeNil())
+	})
+
+	It("Should return the list of addresses", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ld := NewMockLedger(mockCtrl)
+
+		wa, _, _ := createWallet(ld)
+		wa.CreateAddress()
+
+		addrs, err := wa.GetAddresses()
+		Expect(err).To(BeNil())
+		Expect(addrs).NotTo(BeNil())
+		Expect(len(addrs)).To(Equal(2))
+	})
+
+	It("Should return an address", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ld := NewMockLedger(mockCtrl)
+
+		wa, _, _ := createWallet(ld)
+		addr2, _ := wa.CreateAddress()
+
+		addr, err := wa.GetAddress([]byte(addr2.Address))
+		Expect(err).To(BeNil())
+		Expect(addr).To(Equal(addr2))
+	})
+
+	It("Should get address' statement", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ld := NewMockLedger(mockCtrl)
+
+		wa, firstTx, _ := createWallet(ld)
+
+		ld.EXPECT().GetAddressStatement(gomock.Any())
+
+		wa.GetAddressStatement(string(firstTx.Address))
+	})
+
+	It("Should get the last transaction", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		ld := NewMockLedger(mockCtrl)
+
+		wa, firstTx, _ := createWallet(ld)
+
+		ld.EXPECT().GetLastTransaction(string(firstTx.Address))
+
+		wa.GetLastTransaction(string(firstTx.Address))
 	})
 })
 
@@ -49,4 +117,18 @@ func createFirstTx() (*transaction.Transaction, *address.Address) {
 	tx.SetPow()
 	tx.Sign(addr.Keys.ToEcdsaPrivateKey())
 	return tx, addr
+}
+
+func createWallet(ld ledger.Ledger) (*wallet.Wallet, *transaction.Transaction, *address.Address) {
+	ms := keyvaluestore.NewMemoryKeyValueStore()
+	as := keyvaluestore.NewMemoryKeyValueStore()
+	val := transaction.NewValidatorCreator()
+	ts = transactionstore.New(ms, val)
+
+	firstTx, addr := createFirstTx()
+
+	as.Put(addr.Address, addr.ToBytes())
+	ts.Store(firstTx)
+
+	return wallet.New(ts, as, ld), firstTx, addr
 }

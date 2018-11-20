@@ -16,7 +16,7 @@ var nodeServerCmd = &cobra.Command{
 	Short: "Start serving. Starts rest and udp servers",
 	Long:  `Start serving. Starts rest and udp servers`,
 	Run: func(cmd *cobra.Command, args []string) {
-		node := node.New()
-		node.Run(cfg)
+		node := node.New(cfg)
+		node.Run()
 	},
 }

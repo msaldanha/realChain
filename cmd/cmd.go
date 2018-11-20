@@ -8,8 +8,6 @@ import (
 	"github.com/msaldanha/realChain/config"
 )
 
-
-
 var rootCmd *cobra.Command
 var cfg *viper.Viper
 
@@ -23,9 +21,11 @@ func init() {
 	cfg.AddConfigPath(".")
 
 	cfg.SetDefault(config.CfgDataFolder, "./")
-	cfg.SetDefault(config.CfgChainFile, "chain.db")
-	cfg.SetDefault(config.CfgAddressesFile, "addresses.db")
-	cfg.SetDefault(config.CfgRestServer, "localhost:1300")
+	cfg.SetDefault(config.CfgLedgerChainFile, "chain.db")
+	cfg.SetDefault(config.CfgLedgerAddressesFile, "addresses.db")
+	cfg.SetDefault(config.CfgWalletChainFile, "wchain.db")
+	cfg.SetDefault(config.CfgWalletAddressesFile, "waddresses.db")
+	cfg.SetDefault(config.CfgNodeRestServer, "localhost:1300")
 	cfg.SetDefault(config.CfgUdpServer, "localhost:1200")
 
 	err := cfg.ReadInConfig()

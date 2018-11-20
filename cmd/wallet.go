@@ -39,7 +39,12 @@ var walletCreateAddressCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		resp, err := resty.R().Post(getApiUrl("/wallet/addresses"))
 		if err != nil {
-			fmt.Printf("Create address failed: %s (%s)", err, string(resp.Body()))
+			fmt.Printf("Create address failed: %s (%s)\n", err, string(resp.Body()))
+			os.Exit(1)
+			return
+		}
+		if resp.StatusCode() != 200 {
+			fmt.Printf("Create address failed: %d (%s)\n", resp.StatusCode(), resp.Status())
 			os.Exit(1)
 			return
 		}
@@ -102,6 +107,6 @@ func getPrettyJson(jsonBytes []byte) string {
 }
 
 func getApiUrl(resource string) string {
-	api := cfg.GetString(config.CfgRestServer)
+	api := cfg.GetString(config.CfgWalletRestServer)
 	return "http://" + api + resource
 }

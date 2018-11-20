@@ -27,7 +27,7 @@ var ledgerInitCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		bklStoreOptions := &keyvaluestore.BoltKeyValueStoreOptions{
-			DbFile: filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgChainFile)),
+			DbFile: filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgLedgerChainFile)),
 			BucketName: "TxChain",
 		}
 		txStore := keyvaluestore.NewBoltKeyValueStore()
@@ -37,7 +37,7 @@ var ledgerInitCmd = &cobra.Command{
 		}
 
 		accStoreOptions := &keyvaluestore.BoltKeyValueStoreOptions{
-			DbFile: filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgAddressesFile)),
+			DbFile: filepath.Join(cfg.GetString(config.CfgDataFolder), cfg.GetString(config.CfgLedgerAddressesFile)),
 			BucketName: "Addresses",
 		}
 
@@ -48,10 +48,9 @@ var ledgerInitCmd = &cobra.Command{
 		}
 
 		val := transaction.NewValidatorCreator()
-		bs := transactionstore.New(txStore, val)
-		ld := ledger.New()
-		ld.Use(bs, as)
-		if !bs.IsEmpty() {
+		ts := transactionstore.New(txStore, val)
+		ld := ledger.NewLocalLedger(ts, as)
+		if !ts.IsEmpty() {
 			fmt.Println("Ledger already initialized")
 			os.Exit(1)
 		}
@@ -68,7 +67,7 @@ var ledgerInitCmd = &cobra.Command{
 			fmt.Println("Falied to initialize the Ledger: amount must be > 0")
 			os.Exit(1)
 		}
-		tx, err := ld.Initialize(startAmount)
+		tx, _, err := ld.Initialize(startAmount)
 		if  err != nil {
 			fmt.Printf("Falied to initialize the Ledger: %s\n", err)
 			os.Exit(1)

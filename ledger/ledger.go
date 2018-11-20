@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	ErrInvalidOperation                    = Error.Error("invalid operation")
 	ErrInvalidAddressBalance               = Error.Error("invalid address balance")
 	ErrLedgerAlreadyInitialized            = Error.Error("ledger already initialized")
 	ErrFromToMustBeDifferent               = Error.Error("from and to addresses must be different")
@@ -30,6 +31,8 @@ const (
 	ErrSentAmountDiffersFromReceivedAmount = Error.Error("sent amount differs from received amount")
 )
 
+//go:generate mockgen -destination=../tests/mock_ledger.go -package=tests github.com/msaldanha/realChain/ledger Ledger
+
 type Ledger interface {
 	Initialize(initialBalance float64) (*transaction.Transaction, *address.Address, error)
 	GetLastTransaction(address string) (*transaction.Transaction, error)
@@ -39,4 +42,5 @@ type Ledger interface {
 	HandleTransaction(tx *transaction.Transaction) (ret *transaction.Transaction, err error)
 	AddAddress(addr *address.Address) error
 	Receive(send *transaction.Transaction) (string, error)
+	VerifyTransaction(tx *transaction.Transaction, isNew bool) error
 }

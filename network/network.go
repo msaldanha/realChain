@@ -23,12 +23,12 @@ type Context struct {
 type Handler func(*Context)
 
 func NewNetwork(url string) (*Network, error) {
-	destUdpAddr, err := net.ResolveUDPAddr("udp4", url)
+	updUrl, err := net.ResolveUDPAddr("udp4", url)
 	if err != nil {
 		return nil, err
 	}
 
-	conn, err := net.ListenUDP("udp4", destUdpAddr)
+	conn, err := net.ListenUDP("udp4", updUrl)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -65,8 +65,12 @@ func (n *Network) UsePeers(urls ...string) {
 	}
 }
 
+func (n *Network) GetPeersCount() int {
+	return len(n.peers)
+}
+
 func (n *Network) handle(peer *Peer, data []byte) error {
-	var msg message
+	var msg Message
 	n.Log("Received msg from %s \n", peer)
 	decoder := xdr.NewDecoder(bytes.NewReader(data))
 	_, err := decoder.Decode(&msg)
@@ -98,8 +102,6 @@ func (n *Network) handle(peer *Peer, data []byte) error {
 	return nil
 }
 
-type handler func(peer *Peer, data []byte, err error) (error)
-
 func (n *Network) Receive() ([]byte, *net.UDPAddr, error) {
 	var buf [1024]byte
 	size, addr, err := n.conn.ReadFromUDP(buf[0:])
@@ -109,11 +111,11 @@ func (n *Network) Receive() ([]byte, *net.UDPAddr, error) {
 	return buf[0:size], addr, nil
 }
 
-func (n *Network) Run() {
+func (n *Network) Run() error {
 	for {
 		data, addr, err := n.Receive()
 		if err != nil {
-			return
+			return err
 		}
 		key := addr.String()
 		peer := n.peers[key]
@@ -129,7 +131,7 @@ func (n *Network) Broadcast(endPoint string, data []byte) (error) {
 	msg.Payload = data
 	msgBytes := msg.ToBytes()
 	for _, peer := range n.peers {
-		peer.Send(msgBytes)
+		peer.Send(endPoint, msgBytes)
 	}
 	return nil
 }
