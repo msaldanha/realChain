@@ -45,10 +45,11 @@ func (wa *Wallet) SendFunds(from, to string, amount float64) (*transaction.Trans
 		return nil, err
 	}
 
-	_, err = wa.ld.HandleTransaction(tx)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: fix me
+	//_, err = wa.ld.Register(tx)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	_, err = wa.ts.Store(tx)
 	if err != nil {

@@ -64,7 +64,8 @@ func IsValid(addr string) (bool, error) {
 	pubKeyHash := Base58Decode([]byte(addr))
 	var chksum [4]byte
 	copy(chksum[:], pubKeyHash[len(pubKeyHash) - addressChecksumLen:])
-	if bytes.Compare(checksum(pubKeyHash[:len(pubKeyHash) - addressChecksumLen]), chksum[:]) != 0 {
+	chkCalc := checksum(pubKeyHash[:len(pubKeyHash) - addressChecksumLen])
+	if bytes.Compare(chkCalc, chksum[:]) != 0 {
 		return false, ErrInvalidChecksum
 	}
 	return true, nil
@@ -91,6 +92,10 @@ func generateAddressHash(pubKey []byte) ([]byte, error) {
 
 	fullPayload := append(versionedPayload, checksum...)
 	address := Base58Encode(fullPayload)
+
+	if ok, _ := IsValid(string(address)); !ok {
+		fmt.Printf("WARNING: Not valid addr generated: %s\n", string(address))
+	}
 
 	return address, nil
 }

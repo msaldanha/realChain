@@ -1,153 +1,43 @@
 package ledger
 
 import (
-	"github.com/msaldanha/realChain/transactionstore"
-	"github.com/msaldanha/realChain/transaction"
-	"github.com/msaldanha/realChain/address"
-	"crypto/ecdsa"
 	"bytes"
-	"github.com/msaldanha/realChain/keyvaluestore"
-	log "github.com/sirupsen/logrus"
+	"github.com/msaldanha/realChain/address"
+	"github.com/msaldanha/realChain/transaction"
+	"github.com/msaldanha/realChain/transactionstore"
 	"math"
 )
 
 type LocalLedger struct {
 	ts        *transactionstore.TransactionStore
-	addresses keyvaluestore.Storer
 }
 
-func NewLocalLedger(txStore *transactionstore.TransactionStore, addressStore keyvaluestore.Storer) (*LocalLedger) {
-	return &LocalLedger{ts:txStore, addresses:addressStore}
+func NewLocalLedger(txStore *transactionstore.TransactionStore) (*LocalLedger) {
+	return &LocalLedger{ts:txStore}
 }
 
-func (ld *LocalLedger) Initialize(initialBalance float64) (*transaction.Transaction, *address.Address, error) {
+func (ld *LocalLedger) Initialize(genesisTx *transaction.Transaction) (error) {
 	if !ld.ts.IsEmpty() {
-		return nil, nil, ErrLedgerAlreadyInitialized
+		return ErrLedgerAlreadyInitialized
 	}
 
-	genesisTx := transaction.NewOpenTransaction()
-	addr, err := ld.CreateAddress()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	ld.AddAddress(addr)
-
-	genesisTx.Address = []byte(addr.Address)
-	genesisTx.Representative = genesisTx.Address
-	genesisTx.Balance = initialBalance
-	genesisTx.PubKey = addr.Keys.PublicKey
-
-	err = ld.setPow(genesisTx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = ld.sign(genesisTx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_, err = ld.saveTransaction(genesisTx)
-	if err != nil {
-		if err.Error() == "Previous transaction can not be empty" {
-			return nil, nil, ErrLedgerAlreadyInitialized
-		}
-		return nil, nil, err
-	}
-	return genesisTx, addr, nil
+	return ld.saveTransaction(genesisTx)
 }
 
-func (ld *LocalLedger) CreateSendTransaction(from, to string, amount float64) (*transaction.Transaction, error) {
-	fromTipTx, err := ld.ts.Retrieve(from)
-
-	if err != nil {
-		return nil, err
+func (ld *LocalLedger) Register(sendTx *transaction.Transaction, receiveTx *transaction.Transaction) (error) {
+	if err := ld.VerifyTransaction(sendTx, true); err != nil {
+		return err
 	}
 
-	addr := address.New()
-	addr.Address = to
-	if valid, err := addr.IsValid(); !valid {
-		return nil, err
+	if err := ld.VerifyTransaction(receiveTx, true); err != nil {
+		return err
 	}
 
-	if from == to {
-		return nil, ErrFromToMustBeDifferent
+	if err := ld.VerifyTransactions(sendTx, receiveTx); err != nil {
+		return err
 	}
 
-	if fromTipTx == nil {
-		return nil, ErrFromAddressNotFound
-	}
-
-	if fromTipTx.Balance < amount {
-		return nil, ErrNotEnoughFunds
-	}
-
-	if amount == 0 {
-		return nil, ErrAmountCantBeZero
-	}
-
-	tx, err := ld.createSendTransaction(fromTipTx, []byte(to), amount)
-	if err != nil {
-		return nil, err
-	}
-
-	return tx, nil
-}
-
-func (ld *LocalLedger) Receive(send *transaction.Transaction) (string, error) {
-	if err := ld.VerifyTransaction(send, false); err != nil {
-		logError("HandleTransaction", send, err)
-		return "", err
-	}
-	addr, err := ld.GetAddress(send.Link)
-	if err != nil {
-		logError("Receive", send, err)
-		return "", err
-	}
-	if addr == nil {
-		logError("Receive", send, ErrAddressNotManagedByThisLedger)
-		return "", ErrAddressNotManagedByThisLedger
-	}
-
-	tx, err := ld.createReceiveTransaction(send)
-	if err != nil {
-		return "", err
-	}
-
-	return string(tx.Hash), nil
-}
-
-func (ld *LocalLedger) HandleTransactionBytes(txBytes []byte) (*transaction.Transaction, error) {
-	tx := transaction.NewTransactionFromBytes(txBytes)
-	return ld.HandleTransaction(tx)
-}
-
-func (ld *LocalLedger) HandleTransaction(tx *transaction.Transaction) (ret *transaction.Transaction, err error) {
-	err = nil
-	ret = nil
-	if err = ld.VerifyTransaction(tx, true); err != nil {
-		logError("HandleTransaction", tx, err)
-		return
-	}
-
-	_, err = ld.saveTransaction(tx)
-	if err != nil {
-		logError("HandleTransaction", tx, err)
-		return
-	}
-
-	if tx.Type == transaction.SEND {
-		addr, err := ld.GetAddress(tx.Link)
-		if err != nil {
-			return nil, err
-		}
-		if addr != nil {
-			return ld.createReceiveTransaction(tx)
-		}
-	}
-
-	return
+	return ld.saveTransactions(sendTx, receiveTx)
 }
 
 func (ld *LocalLedger) GetLastTransaction(address string) (*transaction.Transaction, error) {
@@ -172,164 +62,6 @@ func (ld *LocalLedger) GetAddressStatement(address string) ([]*transaction.Trans
 		return nil, err
 	}
 	return txChain, nil
-}
-
-func (ld *LocalLedger) createSendTransaction(fromTip *transaction.Transaction, to []byte, amount float64) (*transaction.Transaction, error) {
-	send := transaction.NewSendTransaction()
-	send.Address = fromTip.Address
-	send.Link = to
-	send.Previous = fromTip.Hash
-	send.Balance = fromTip.Balance - amount
-	send.PubKey = fromTip.PubKey
-	if err := ld.signAndPow(send); err != nil {
-		return nil, err
-	}
-	return send, nil
-}
-
-func (ld *LocalLedger) createReceiveTransaction(send *transaction.Transaction) (*transaction.Transaction, error) {
-	prev, err := ld.ts.Retrieve(string(send.Previous))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := ld.VerifyTransaction(send, false); err != nil {
-		return nil, err
-	}
-
-	amount := prev.Balance - send.Balance
-	if amount <= 0 {
-		return nil, ErrInvalidAddressBalance
-	}
-
-	addr := address.New()
-	addr.Address = string(send.Link)
-	if valid, _ := addr.IsValid(); !valid {
-		return nil, ErrInvalidSendTransactionAddress
-	}
-
-	addr1, err := ld.GetAddress(send.Link)
-	if err != nil {
-		return nil, err
-	}
-	if addr1 == nil {
-		return nil, ErrAddressNotManagedByThisLedger
-	}
-
-	receiveTip, err := ld.ts.Retrieve(string(send.Link))
-	if err != nil {
-		return nil, err
-	}
-
-	var receive *transaction.Transaction
-	if receiveTip != nil {
-		receive = transaction.NewReceiveTransaction()
-		receive.Previous = receiveTip.Hash
-		receive.Balance = receiveTip.Balance + amount
-		receive.Representative = receiveTip.Representative
-		receive.PubKey = receiveTip.PubKey
-	} else {
-		receive = transaction.NewOpenTransaction()
-		receive.Balance = amount
-		receive.Representative = send.Link
-		receive.PubKey = addr1.Keys.PublicKey
-	}
-
-	receive.Address = send.Link
-	receive.Link = send.Hash
-
-	if err := ld.signAndPow(receive); err != nil {
-		return nil, err
-	}
-
-	_, err = ld.HandleTransaction(receive)
-	if err != nil {
-		return nil, err
-	}
-
-	return receive, nil
-}
-
-func (ld *LocalLedger) saveTransaction(tx *transaction.Transaction) ([]byte, error) {
-	tx, err := ld.ts.Store(tx)
-	if err != nil {
-		return nil, err
-	}
-	return tx.Hash, nil
-}
-
-func (ld *LocalLedger) signAndPow(tx *transaction.Transaction) (error) {
-	err := ld.setPow(tx)
-	if err != nil {
-		return err
-	}
-
-	err = ld.sign(tx)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ld *LocalLedger) CreateAddress() (*address.Address, error) {
-	return address.NewAddressWithKeys()
-}
-
-func (ld *LocalLedger) AddAddress(addr *address.Address) error {
-	return ld.addresses.Put(addr.Address, addr.ToBytes())
-}
-
-func (ld *LocalLedger) GetAddress(addressBytes []byte) (*address.Address, error) {
-	addr, ok, err := ld.addresses.Get(string(addressBytes))
-	if !ok {
-		return nil, err
-	}
-	return address.NewAddressFromBytes(addr), nil
-}
-
-func (ld *LocalLedger) GetAddresses() ([]*address.Address, error) {
-	addrs, err := ld.addresses.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	addresses := make([]*address.Address, 0)
-	for _, v := range addrs {
-		addresses = append(addresses, address.NewAddressFromBytes(v))
-	}
-	return addresses, nil
-}
-
-func (ld *LocalLedger) setPow(tx *transaction.Transaction) error {
-	nonce, hash, err := tx.CalculatePow()
-	if err != nil {
-		return err
-	}
-	tx.PowNonce = nonce
-	tx.Hash = hash
-	return nil
-}
-
-func (ld *LocalLedger) sign(tx *transaction.Transaction) error {
-	addr, err := ld.GetAddress(tx.Address)
-	if err != nil {
-		return err
-	}
-	if addr == nil {
-		return ErrAddressNotManagedByThisLedger
-	}
-	privateKey := ld.getPrivateKey(addr)
-	err = tx.Sign(privateKey)
-	return err
-}
-
-func (ld *LocalLedger) verifyPow(tx *transaction.Transaction) bool {
-	ok, _ := tx.VerifyPow()
-	return ok
-}
-
-func (ld *LocalLedger) getPrivateKey(addr *address.Address) *ecdsa.PrivateKey {
-	return addr.Keys.ToEcdsaPrivateKey()
 }
 
 func (ld *LocalLedger) VerifyTransaction(tx *transaction.Transaction, isNew bool) (error) {
@@ -388,51 +120,86 @@ func (ld *LocalLedger) VerifyTransaction(tx *transaction.Transaction, isNew bool
 		}
 	}
 
-	if tx.Type == transaction.OPEN || tx.Type == transaction.RECEIVE {
-		send, err := ld.ts.Retrieve(string(tx.Link))
-		if err != nil {
-			return err
-		}
-		if send == nil {
-			return ErrSendTransactionNotFound
-		}
-		if isNew {
-			pending, err := ld.isPendingTransaction(send)
-			if err != nil {
-				return err
-			}
-			if !pending {
-				return ErrSendTransactionIsNotPending
-			}
-			head, err := ld.ts.Retrieve(string(send.Address))
-			if err != nil {
-				return err
-			}
-			if head == nil {
-				return ErrHeadTransactionNotFound
-			}
-			if bytes.Compare(head.Hash, send.Hash) != 0 {
-				return ErrSendTransactionIsNotHead
-			}
-			sentAmount, err := ld.findAbsoluteBalanceDiffWithPrevious(send)
-			if err != nil {
-				return err
-			}
-			receivedAmount, err := ld.findAbsoluteBalanceDiffWithPrevious(tx)
-			if err != nil {
-				return err
-			}
-			if sentAmount != receivedAmount {
-				return ErrSentAmountDiffersFromReceivedAmount
-			}
-		}
-	}
-
 	open, _ := ld.getOpenTransaction(tx)
 	if open == nil {
 		return ErrOpenTransactionNotFound
 	}
+
 	return nil
+}
+
+func (ld *LocalLedger) VerifyTransactions(sendTx *transaction.Transaction, receiveTx *transaction.Transaction) (error) {
+	if sendTx.Type != transaction.SEND {
+		return ErrInvalidSendTransaction
+	}
+
+	if receiveTx.Type != transaction.OPEN && receiveTx.Type != transaction.RECEIVE {
+		return ErrInvalidReceiveTransaction
+	}
+
+	if string(receiveTx.Link) != string(sendTx.Hash) {
+		return ErrSendReceiveTransactionsNotLinked
+	}
+
+	if string(receiveTx.Address) == string(sendTx.Address) {
+		return ErrSendReceiveTransactionsCantBeSameAddress
+	}
+
+	pending, err := ld.isPendingTransaction(sendTx)
+	if err != nil {
+		return err
+	}
+	if !pending {
+		return ErrSendTransactionIsNotPending
+	}
+
+	sentAmount, err := ld.findAbsoluteBalanceDiffWithPrevious(sendTx)
+	if err != nil {
+		return err
+	}
+
+	receivedAmount, err := ld.findAbsoluteBalanceDiffWithPrevious(receiveTx)
+	if err != nil {
+		return err
+	}
+
+	if sentAmount != receivedAmount {
+		return ErrSentAmountDiffersFromReceivedAmount
+	}
+
+	return nil
+}
+
+func (ld *LocalLedger) saveTransaction(tx *transaction.Transaction) (error) {
+	_, err := ld.ts.Store(tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ld *LocalLedger) saveTransactions(sendTx *transaction.Transaction, receiveTx *transaction.Transaction) (error) {
+	err := ld.VerifyTransactions(sendTx, receiveTx)
+	if err != nil {
+		return err
+	}
+
+	err = ld.saveTransaction(sendTx)
+	if err != nil {
+		return err
+	}
+
+	err = ld.saveTransaction(receiveTx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ld *LocalLedger) verifyPow(tx *transaction.Transaction) bool {
+	ok, _ := tx.VerifyPow()
+	return ok
 }
 
 func (ld *LocalLedger) isPendingTransaction(tx *transaction.Transaction) (bool, error) {
@@ -464,20 +231,17 @@ func (ld *LocalLedger) findAbsoluteBalanceDiffWithPrevious(tx *transaction.Trans
 }
 
 func (ld *LocalLedger) findBalanceDiffWithPrevious(tx *transaction.Transaction) (float64, error) {
-	var amount float64 = 0
+	if tx.Type == transaction.OPEN {
+		return tx.Balance, nil
+	}
 	previous, err := ld.findPrevious(tx)
 	if err != nil {
 		return 0, err
 	}
 	if previous == nil {
-		return 0, err
+		return 0, ErrPreviousTransactionNotFound
 	}
-	if tx.Type == transaction.OPEN {
-		amount = tx.Balance
-	} else {
-		amount = previous.Balance - tx.Balance
-	}
-	return amount, nil
+	return previous.Balance - tx.Balance, nil
 }
 
 func (ld *LocalLedger) findPrevious(tx *transaction.Transaction) (*transaction.Transaction, error) {
@@ -488,6 +252,9 @@ func (ld *LocalLedger) findPrevious(tx *transaction.Transaction) (*transaction.T
 }
 
 func (ld *LocalLedger) verifyAddress(tx *transaction.Transaction) (bool, error) {
+	if ok, err := address.IsValid(string(tx.Address)); !ok {
+		return ok, err
+	}
 	if !address.MatchesPubKey(tx.Address, tx.PubKey) {
 		return false, ErrAddressDoesNotMatchPubKey
 	}
@@ -525,8 +292,4 @@ func (ld *LocalLedger) getPreviousTransaction(tx *transaction.Transaction) (*tra
 		return nil, ErrPreviousTransactionNotFound
 	}
 	return previous, nil
-}
-
-func logError(context string, tx *transaction.Transaction, err error) {
-	log.Printf("Ledger.%s failed: %s (tx: %s)", context, err, string(tx.Hash))
 }

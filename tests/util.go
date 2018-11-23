@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/msaldanha/realChain/ledger"
 	. "github.com/onsi/gomega"
 	"github.com/msaldanha/realChain/transaction"
 	"time"
@@ -10,7 +11,7 @@ import (
 	"github.com/msaldanha/realChain/address"
 )
 
-func assertCommonVal(val transaction.Validator, tx *transaction.Transaction) {
+func AssertCommonVal(val transaction.Validator, tx *transaction.Transaction) {
 	ok, err := val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
@@ -61,14 +62,14 @@ func assertCommonVal(val transaction.Validator, tx *transaction.Transaction) {
 	tx.PubKey = []byte("ssssssssssssssssssssss")
 }
 
-func createNonEmptyMemoryStore() *keyvaluestore.MemoryKeyValueStore {
+func CreateNonEmptyMemoryStore() *keyvaluestore.MemoryKeyValueStore {
 	ms := keyvaluestore.NewMemoryKeyValueStore()
 	tx := &transaction.Transaction{}
 	ms.Put("genesis", tx.ToBytes())
 	return ms
 }
 
-func dumpTxChain(txChain []*transaction.Transaction) {
+func DumpTxChain(txChain []*transaction.Transaction) {
 	fmt.Println("============= Transaction Chain Dump start =================")
 	level := 0
 	for _, v := range txChain {
@@ -80,7 +81,7 @@ func dumpTxChain(txChain []*transaction.Transaction) {
 	fmt.Println("============= End =================")
 }
 
-func createTestAddress() *address.Address {
+func CreateTestAddress() *address.Address {
 	addr, _ := address.NewAddressWithKeys()
 	return addr
 }
@@ -95,4 +96,69 @@ func CreateSendTransaction(fromTip *transaction.Transaction, fromAddr *address.A
 	send.SetPow()
 	send.Sign(fromAddr.Keys.ToEcdsaPrivateKey())
 	return send, nil
+}
+
+func CreateReceiveTransaction(send *transaction.Transaction, amount float64, receiveAddr *address.Address,
+	receiveTip *transaction.Transaction) (*transaction.Transaction, error) {
+
+	var receive *transaction.Transaction
+	if receiveTip != nil {
+		receive = transaction.NewReceiveTransaction()
+		receive.Previous = receiveTip.Hash
+		receive.Balance = receiveTip.Balance + amount
+		receive.Representative = receiveTip.Representative
+		receive.PubKey = receiveTip.PubKey
+	} else {
+		receive = transaction.NewOpenTransaction()
+		receive.Balance = amount
+		receive.Representative = send.Link
+		receive.PubKey = receiveAddr.Keys.PublicKey
+	}
+
+	receive.Address = send.Link
+	receive.Link = send.Hash
+
+	if err := receive.SetPow(); err != nil {
+		return nil, err
+	}
+
+	if err := receive.Sign(receiveAddr.Keys.ToEcdsaPrivateKey()); err != nil {
+		return nil, err
+	}
+
+	return receive, nil
+}
+
+func CreateGenesisTransaction(balance float64) (*transaction.Transaction, *address.Address) {
+	genesisTx := transaction.NewOpenTransaction()
+	addr, err := address.NewAddressWithKeys()
+	Expect(err).To(BeNil())
+
+	genesisTx.Address = []byte(addr.Address)
+	genesisTx.Representative = genesisTx.Address
+	genesisTx.Balance = balance
+	genesisTx.PubKey = addr.Keys.PublicKey
+
+	err = genesisTx.SetPow()
+	Expect(err).To(BeNil())
+
+	err = genesisTx.Sign(addr.Keys.ToEcdsaPrivateKey())
+	Expect(err).To(BeNil())
+
+	return genesisTx, addr
+}
+
+
+func SendFunds(ld ledger.Ledger, sendAddr *address.Address, prevSendTx *transaction.Transaction, prevReceiveTx *transaction.Transaction,
+		receiveAddr *address.Address, amount float64) (*transaction.Transaction, *transaction.Transaction) {
+	sendTx, err := CreateSendTransaction(prevSendTx, sendAddr, receiveAddr.Address, amount)
+	Expect(err).To(BeNil())
+
+	receiveTx, err := CreateReceiveTransaction(sendTx, amount, receiveAddr, prevReceiveTx)
+	Expect(err).To(BeNil())
+
+	err = ld.Register(sendTx, receiveTx)
+	Expect(err).To(BeNil())
+
+	return sendTx, receiveTx
 }

@@ -160,7 +160,8 @@ func (c *Consensus) handleVoting() network.Handler {
 }
 
 func (c *Consensus) confirmTransaction(tx *transaction.Transaction) () {
-	c.ledger.HandleTransaction(tx)
+	//TODO: fix me
+	//c.ledger.Register(tx)
 	delete(c.txPool, string(tx.Hash))
 }
 

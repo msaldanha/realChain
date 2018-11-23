@@ -15,7 +15,7 @@ var _ = Describe("TransactionStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 		tx := &transaction.Transaction{}
@@ -46,7 +46,7 @@ var _ = Describe("TransactionStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
@@ -71,7 +71,7 @@ var _ = Describe("TransactionStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 

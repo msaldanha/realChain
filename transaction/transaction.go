@@ -182,7 +182,7 @@ func (tx *Transaction) VerifySignature() bool {
 	y.SetBytes(tx.PubKey[(keyLen / 2):])
 
 	curve := elliptic.P256()
-	rawPubKey := ecdsa.PublicKey{curve, &x, &y}
+	rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
 
 	return ecdsa.Verify(&rawPubKey, tx.Hash, &r, &s)
 }

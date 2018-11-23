@@ -1,17 +1,16 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"path/filepath"
+	"fmt"
+	"github.com/msaldanha/realChain/config"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"log"
 	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/transactionstore"
-	"github.com/msaldanha/realChain/ledger"
-	"fmt"
+	"github.com/spf13/cobra"
+	"log"
 	"os"
+	"path/filepath"
 	"strconv"
-	"github.com/msaldanha/realChain/config"
 )
 
 var ledgerCmd = &cobra.Command{
@@ -49,7 +48,7 @@ var ledgerInitCmd = &cobra.Command{
 
 		val := transaction.NewValidatorCreator()
 		ts := transactionstore.New(txStore, val)
-		ld := ledger.NewLocalLedger(ts, as)
+		//ld := ledger.NewLocalLedger(ts)
 		if !ts.IsEmpty() {
 			fmt.Println("Ledger already initialized")
 			os.Exit(1)
@@ -67,11 +66,12 @@ var ledgerInitCmd = &cobra.Command{
 			fmt.Println("Falied to initialize the Ledger: amount must be > 0")
 			os.Exit(1)
 		}
-		tx, _, err := ld.Initialize(startAmount)
-		if  err != nil {
-			fmt.Printf("Falied to initialize the Ledger: %s\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("Ledger successfuly initialized. Genesis address: %s, Start balance: %f", string(tx.Address), startAmount)
+		//TODO: fix me
+		//err := ld.Initialize(startAmount)
+		//if  err != nil {
+		//	fmt.Printf("Falied to initialize the Ledger: %s\n", err)
+		//	os.Exit(1)
+		//}
+		//fmt.Printf("Ledger successfuly initialized. Genesis address: %s, Start balance: %f", string(tx.Address), startAmount)
 	},
 }

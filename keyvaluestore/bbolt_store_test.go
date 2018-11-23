@@ -1,15 +1,17 @@
-package tests
+package keyvaluestore_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/msaldanha/realChain/transactionstore"
 	"github.com/golang/mock/gomock"
+	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/ledger"
 	"github.com/msaldanha/realChain/transaction"
+	"github.com/msaldanha/realChain/transactionstore"
+	"github.com/msaldanha/realChain/tests"
 	"os"
 	"path/filepath"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("BoltKeyValueStore", func() {
@@ -24,42 +26,33 @@ var _ = Describe("BoltKeyValueStore", func() {
 		err = txStore.Init(bklStoreOptions)
 		Expect(err).To(BeNil())
 
-		accStoreOptions := prepareOptions("Addresses", filepath.Join(path, "addresses-test.db"))
-		as := keyvaluestore.NewBoltKeyValueStore()
-		err = as.Init(accStoreOptions)
-		Expect(err).To(BeNil())
-
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(txStore, val)
 
-		ld := ledger.NewLocalLedger(bs, as)
+		ld := ledger.NewLocalLedger(bs)
 
-		tx, addr, err := ld.Initialize(1000)
+		genesisTx, genesisAddr := tests.CreateGenesisTransaction(1000)
+		err = ld.Initialize(genesisTx)
 		Expect(err).To(BeNil())
 
-		receiveAcc := createTestAddress()
-
-		ld.AddAddress(receiveAcc)
-
-		tx, err = bs.Retrieve(string(tx.Hash))
+		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
-		Expect(tx).NotTo(BeNil())
 
-		var sendHash, receiveHash string
-		prevTx := tx
+		var prevReceiveTx *transaction.Transaction
+		prevSendTx := genesisTx
 		for x := 1; x <= 10; x++ {
-			prevTx, sendHash, receiveHash = sendFunds(ld, addr, prevTx, receiveAcc.Address, 100)
+			prevSendTx, prevReceiveTx = tests.SendFunds(ld, genesisAddr, prevSendTx, prevReceiveTx, receiveAddr, 100)
 		}
 
-		txChain, err := bs.GetTransactionChain(sendHash, true)
-		dumpTxChain(txChain)
+		txChain, err := bs.GetTransactionChain(string(prevSendTx.Hash), true)
+		tests.DumpTxChain(txChain)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(11))
 		Expect(txChain[10].Type).To(Equal(transaction.SEND))
 		Expect(txChain[10].Balance).To(Equal(float64(0)))
 
-		txChain, err = bs.GetTransactionChain(receiveHash, true)
-		dumpTxChain(txChain)
+		txChain, err = bs.GetTransactionChain(string(prevReceiveTx.Hash), true)
+		tests.DumpTxChain(txChain)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(12))
 		Expect(txChain[11].Type).To(Equal(transaction.RECEIVE))

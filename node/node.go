@@ -109,7 +109,7 @@ func (n *Node) createLedger() (ledger.Ledger, error) {
 		return nil, ErrLedgerNotInitialized
 	}
 
-	ld := ledger.NewLocalLedger(bs, addrDb)
+	ld := ledger.NewLocalLedger(bs)
 
 	return ld, nil
 }

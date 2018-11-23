@@ -13,7 +13,7 @@ var _ = Describe("Validator", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.OPEN, ms)
 
 		tx := &transaction.Transaction{}
@@ -89,7 +89,7 @@ var _ = Describe("Validator", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.SEND, ms)
 
 		tx := &transaction.Transaction{}
@@ -100,7 +100,7 @@ var _ = Describe("Validator", func() {
 
 		tx.Type = transaction.SEND
 
-		assertCommonVal(val, tx)
+		AssertCommonVal(val, tx)
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
@@ -114,7 +114,7 @@ var _ = Describe("Validator", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.RECEIVE, ms)
 
 		tx := &transaction.Transaction{}
@@ -125,7 +125,7 @@ var _ = Describe("Validator", func() {
 
 		tx.Type = transaction.RECEIVE
 
-		assertCommonVal(val, tx)
+		AssertCommonVal(val, tx)
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
@@ -139,7 +139,7 @@ var _ = Describe("Validator", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.CHANGE, ms)
 
 		tx := &transaction.Transaction{}
@@ -150,7 +150,7 @@ var _ = Describe("Validator", func() {
 
 		tx.Type = transaction.CHANGE
 
-		assertCommonVal(val, tx)
+		AssertCommonVal(val, tx)
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
@@ -164,7 +164,7 @@ var _ = Describe("Validator", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.OPEN, ms)
 		tx := &transaction.Transaction{Type: transaction.OPEN, Link: []byte([]byte("ddddddddddddd")), Previous: []byte([]byte("ppppppppp")),
 		Signature: []byte([]byte("ssssssss")), Balance: 1, Timestamp: 1, PubKey: []byte("kkkkkkk"),
@@ -187,7 +187,7 @@ var _ = Describe("Validator", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.SEND, ms)
 		tx := &transaction.Transaction{Type: transaction.SEND, Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
@@ -210,7 +210,7 @@ var _ = Describe("Validator", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.RECEIVE, ms)
 		tx := &transaction.Transaction{Type: transaction.RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
@@ -242,7 +242,7 @@ var _ = Describe("Validator", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := createNonEmptyMemoryStore()
+		ms := CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.CHANGE, ms)
 		tx := &transaction.Transaction{Type: transaction.CHANGE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
