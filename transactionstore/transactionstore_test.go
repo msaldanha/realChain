@@ -1,6 +1,7 @@
-package tests
+package transactionstore_test
 
 import (
+	"github.com/msaldanha/realChain/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/msaldanha/realChain/transaction"
@@ -15,7 +16,7 @@ var _ = Describe("TransactionStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := CreateNonEmptyMemoryStore()
+		ms := tests.CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 		tx := &transaction.Transaction{}
@@ -46,7 +47,7 @@ var _ = Describe("TransactionStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := CreateNonEmptyMemoryStore()
+		ms := tests.CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
@@ -71,7 +72,7 @@ var _ = Describe("TransactionStore", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ms := CreateNonEmptyMemoryStore()
+		ms := tests.CreateNonEmptyMemoryStore()
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
