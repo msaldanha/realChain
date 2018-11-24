@@ -120,7 +120,7 @@ func (rs *WalletRestServer) sendFunds() iris.Handler {
 		logRequest(ctx)
 		send := &SendDto{}
 		ctx.ReadJSON(send)
-		tx, err := rs.wa.SendFunds(send.From, send.To, send.Amount)
+		tx, err := rs.wa.CreateSendTransaction(send.From, send.To, send.Amount)
 		if hasError(ctx, err) {
 			return
 		}

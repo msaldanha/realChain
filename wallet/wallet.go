@@ -21,7 +21,7 @@ func New(txStore *transactionstore.TransactionStore, addressStore keyvaluestore.
 	return &Wallet{ld:ld, ts: txStore, addresses: addressStore}
 }
 
-func (wa *Wallet) SendFunds(from, to string, amount float64) (*transaction.Transaction, error) {
+func (wa *Wallet) CreateSendTransaction(from, to string, amount float64) (*transaction.Transaction, error) {
 	fromTipTx, err := wa.ts.Retrieve(from)
 
 	if err != nil {
@@ -44,12 +44,6 @@ func (wa *Wallet) SendFunds(from, to string, amount float64) (*transaction.Trans
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: fix me
-	//_, err = wa.ld.Register(tx)
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	_, err = wa.ts.Store(tx)
 	if err != nil {

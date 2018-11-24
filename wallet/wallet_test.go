@@ -24,9 +24,7 @@ var _ = Describe("Wallet", func() {
 
 		wa, firstTx, _ := createWallet(ld)
 
-		ld.EXPECT().Register(gomock.Any(), gomock.Any())
-
-		tx, err := wa.SendFunds(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
+		tx, err := wa.CreateSendTransaction(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
 		Expect(err).To(BeNil())
 
 		tx, err = ts.Retrieve(string(tx.Hash))
@@ -44,9 +42,7 @@ var _ = Describe("Wallet", func() {
 
 		wa, firstTx, _ := createWallet(ld)
 
-		ld.EXPECT().Register(gomock.Any(), gomock.Any()).MaxTimes(0)
-
-		tx, err := wa.SendFunds(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 1300)
+		tx, err := wa.CreateSendTransaction(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 1300)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrNotEnoughFunds))
 		Expect(tx).To(BeNil())
