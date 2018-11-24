@@ -1,6 +1,7 @@
-package tests
+package wallet_test
 
 import (
+	"github.com/msaldanha/realChain/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/msaldanha/realChain/transactionstore"
@@ -19,7 +20,7 @@ var _ = Describe("Wallet", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := NewMockLedger(mockCtrl)
+		ld := tests.NewMockLedger(mockCtrl)
 
 		wa, firstTx, _ := createWallet(ld)
 
@@ -39,7 +40,7 @@ var _ = Describe("Wallet", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := NewMockLedger(mockCtrl)
+		ld := tests.NewMockLedger(mockCtrl)
 
 		wa, firstTx, _ := createWallet(ld)
 
@@ -55,7 +56,7 @@ var _ = Describe("Wallet", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := NewMockLedger(mockCtrl)
+		ld := tests.NewMockLedger(mockCtrl)
 
 		wa, _, _ := createWallet(ld)
 		wa.CreateAddress()
@@ -70,7 +71,7 @@ var _ = Describe("Wallet", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := NewMockLedger(mockCtrl)
+		ld := tests.NewMockLedger(mockCtrl)
 
 		wa, _, _ := createWallet(ld)
 		addr2, _ := wa.CreateAddress()
@@ -84,7 +85,7 @@ var _ = Describe("Wallet", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := NewMockLedger(mockCtrl)
+		ld := tests.NewMockLedger(mockCtrl)
 
 		wa, firstTx, _ := createWallet(ld)
 
@@ -97,7 +98,7 @@ var _ = Describe("Wallet", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := NewMockLedger(mockCtrl)
+		ld := tests.NewMockLedger(mockCtrl)
 
 		wa, firstTx, _ := createWallet(ld)
 
