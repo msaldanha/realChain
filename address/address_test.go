@@ -1,4 +1,4 @@
-package tests
+package address_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -39,5 +39,19 @@ var _ = Describe("Address", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err.Error()).To(Equal("invalid checksum"))
 		Expect(ok).To(BeFalse())
+	})
+
+	It("Should check if address matches pubkey ", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		addr1, _ := address.NewAddressWithKeys()
+		addr2, _ := address.NewAddressWithKeys()
+
+		match := address.MatchesPubKey([]byte(addr1.Address), addr1.Keys.PublicKey)
+		Expect(match).To(BeTrue())
+
+		match = address.MatchesPubKey([]byte(addr1.Address), addr2.Keys.PublicKey)
+		Expect(match).To(BeFalse())
 	})
 })
