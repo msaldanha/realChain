@@ -8,7 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/davecgh/go-xdr/xdr2"
+	"github.com/golang/protobuf/proto"
 	"github.com/msaldanha/realChain/protocol"
 	"log"
 	"math"
@@ -20,7 +20,6 @@ import (
 const targetBits int16 = 16
 
 type Transaction protocol.Transaction
-type Type protocol.Transaction_Type
 
 func NewOpenTransaction() *Transaction {
 	return &Transaction{Type: protocol.Transaction_OPEN, Timestamp: time.Now().Unix()}
@@ -147,16 +146,15 @@ func (tx *Transaction) VerifySignature() bool {
 }
 
 func (tx *Transaction) ToBytes() []byte {
-	var result bytes.Buffer
-	encoder := xdr.NewEncoder(&result)
-	encoder.Encode(tx)
-	return result.Bytes()
+	message := protocol.Transaction(*tx)
+	data, _ := proto.Marshal(&message)
+	return data
 }
 
 func NewTransactionFromBytes(d []byte) *Transaction {
-	var tx Transaction
-	decoder := xdr.NewDecoder(bytes.NewReader(d))
-	decoder.Decode(&tx)
+	message := &protocol.Transaction{}
+	_ = proto.Unmarshal(d, message)
+	tx := Transaction(*message)
 	return &tx
 }
 
