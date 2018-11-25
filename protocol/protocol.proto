@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+service DistributedLedger {
+    rpc Register (RegisterRequest) returns (RegisterResult) {
+    }
+    rpc GetLastTransaction (GetLastTransactionRequest) returns (GetLastTransactionResult) {
+    }
+    rpc GetTransaction (GetTransactionRequest) returns (GetTransactionResult) {
+    }
+    rpc VerifyTransaction (VerifyTransactionRequest) returns (VerifyTransactionResult) {
+    }
+    rpc VerifyTransactions (VerifyTransactionsRequest) returns (VerifyTransactionsResult) {
+    }
+}
+
+message RegisterRequest {
+    Transaction sendTx = 1;
+    Transaction receiveTx = 2;
+}
+
+message RegisterResult {
+
+}
+
+message GetLastTransactionRequest {
+    string address = 1;
+}
+
+message GetLastTransactionResult {
+    Transaction tx = 1;
+}
+
+message GetTransactionRequest {
+    string hash = 1;
+}
+
+message GetTransactionResult {
+    Transaction tx = 1;
+}
+
+message VerifyTransactionRequest {
+    Transaction tx = 1;
+}
+
+message VerifyTransactionResult {
+
+}
+
+message VerifyTransactionsRequest {
+    Transaction sendTx = 1;
+    Transaction receiveTx = 2;
+}
+
+message VerifyTransactionsResult {
+
+}
+
+message Transaction {
+
+    enum Type {
+        ZERO = 0;
+        OPEN = 1;
+        SEND = 2;
+        RECEIVE = 3;
+        CHANGE = 4;
+    }
+
+    int64 Timestamp = 1;
+    Type type = 2;
+    bytes Address = 3;
+    bytes Representative = 4;
+    bytes Previous = 5;
+    bytes Link = 6;
+    double Balance = 7;
+    int32 PowTarget = 8;
+    int64 PowNonce = 9;
+    bytes Hash = 10;
+    bytes PubKey = 11;
+    bytes Signature = 12;
+
+}

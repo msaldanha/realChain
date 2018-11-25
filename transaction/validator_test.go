@@ -1,6 +1,7 @@
 package transaction_test
 
 import (
+	"github.com/msaldanha/realChain/protocol"
 	"github.com/msaldanha/realChain/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,7 +16,7 @@ var _ = Describe("Validator", func() {
 		defer mockCtrl.Finish()
 
 		ms := tests.CreateNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.OPEN, ms)
+		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(protocol.Transaction_OPEN, ms)
 
 		tx := &transaction.Transaction{}
 		ok, err := val.IsFilled(tx)
@@ -23,7 +24,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(transaction.ErrInvalidTransactionType))
 
-		tx.Type = transaction.OPEN
+		tx.Type = protocol.Transaction_OPEN
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
@@ -91,7 +92,7 @@ var _ = Describe("Validator", func() {
 		defer mockCtrl.Finish()
 
 		ms := tests.CreateNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.SEND, ms)
+		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(protocol.Transaction_SEND, ms)
 
 		tx := &transaction.Transaction{}
 		ok, err := val.IsFilled(tx)
@@ -99,7 +100,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(transaction.ErrInvalidTransactionType))
 
-		tx.Type = transaction.SEND
+		tx.Type = protocol.Transaction_SEND
 
 		tests.AssertCommonVal(val, tx)
 
@@ -116,7 +117,7 @@ var _ = Describe("Validator", func() {
 		defer mockCtrl.Finish()
 
 		ms := tests.CreateNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.RECEIVE, ms)
+		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(protocol.Transaction_RECEIVE, ms)
 
 		tx := &transaction.Transaction{}
 		ok, err := val.IsFilled(tx)
@@ -124,7 +125,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(transaction.ErrInvalidTransactionType))
 
-		tx.Type = transaction.RECEIVE
+		tx.Type = protocol.Transaction_RECEIVE
 
 		tests.AssertCommonVal(val, tx)
 
@@ -141,7 +142,7 @@ var _ = Describe("Validator", func() {
 		defer mockCtrl.Finish()
 
 		ms := tests.CreateNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.CHANGE, ms)
+		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(protocol.Transaction_CHANGE, ms)
 
 		tx := &transaction.Transaction{}
 		ok, err := val.IsFilled(tx)
@@ -149,7 +150,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(transaction.ErrInvalidTransactionType))
 
-		tx.Type = transaction.CHANGE
+		tx.Type = protocol.Transaction_CHANGE
 
 		tests.AssertCommonVal(val, tx)
 
@@ -166,8 +167,8 @@ var _ = Describe("Validator", func() {
 		defer mockCtrl.Finish()
 
 		ms := tests.CreateNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.OPEN, ms)
-		tx := &transaction.Transaction{Type: transaction.OPEN, Link: []byte([]byte("ddddddddddddd")), Previous: []byte([]byte("ppppppppp")),
+		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(protocol.Transaction_OPEN, ms)
+		tx := &transaction.Transaction{Type: protocol.Transaction_OPEN, Link: []byte([]byte("ddddddddddddd")), Previous: []byte([]byte("ppppppppp")),
 		Signature: []byte([]byte("ssssssss")), Balance: 1, Timestamp: 1, PubKey: []byte("kkkkkkk"),
 			PowNonce: 1, Representative:[]byte("rrrrrrrrrrrrrrr")}
 		tx.SetHash()
@@ -189,8 +190,8 @@ var _ = Describe("Validator", func() {
 		defer mockCtrl.Finish()
 
 		ms := tests.CreateNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.SEND, ms)
-		tx := &transaction.Transaction{Type: transaction.SEND, Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(protocol.Transaction_SEND, ms)
+		tx := &transaction.Transaction{Type: protocol.Transaction_SEND, Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		tx.SetHash()
 
@@ -212,8 +213,8 @@ var _ = Describe("Validator", func() {
 		defer mockCtrl.Finish()
 
 		ms := tests.CreateNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.RECEIVE, ms)
-		tx := &transaction.Transaction{Type: transaction.RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(protocol.Transaction_RECEIVE, ms)
+		tx := &transaction.Transaction{Type: protocol.Transaction_RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		tx.SetHash()
 
@@ -222,7 +223,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(transaction.ErrSourceNotFound))
 
-		source := &transaction.Transaction{Type: transaction.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		source := &transaction.Transaction{Type: protocol.Transaction_OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		ms.Put("ddddddddddddd", source.ToBytes())
 
@@ -231,7 +232,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(transaction.ErrInvalidSourceType))
 
-		source.Type = transaction.SEND
+		source.Type = protocol.Transaction_SEND
 		ms.Put("ddddddddddddd", source.ToBytes())
 
 		ok, err = val.IsValid(tx)
@@ -244,8 +245,8 @@ var _ = Describe("Validator", func() {
 		defer mockCtrl.Finish()
 
 		ms := tests.CreateNonEmptyMemoryStore()
-		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(transaction.CHANGE, ms)
-		tx := &transaction.Transaction{Type: transaction.CHANGE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		val := transaction.NewValidatorCreator().CreateValidatorForTransaction(protocol.Transaction_CHANGE, ms)
+		tx := &transaction.Transaction{Type: protocol.Transaction_CHANGE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		tx.SetHash()
 

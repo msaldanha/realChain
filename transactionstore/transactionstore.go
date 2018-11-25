@@ -1,6 +1,7 @@
 package transactionstore
 
 import (
+	"github.com/msaldanha/realChain/protocol"
 	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/keyvaluestore"
 )
@@ -16,9 +17,6 @@ func New(store keyvaluestore.Storer, validatorCreator transaction.ValidatorCreat
 }
 
 func (ts *TransactionStore) isValid(tx *transaction.Transaction) (bool, error) {
-	if !tx.Type.IsValid(){
-		return false, transaction.ErrInvalidTransactionType
-	}
 	val := ts.validatorCreator.CreateValidatorForTransaction(tx.Type, ts.store)
 	return val.IsValid(tx)
 }
@@ -48,7 +46,7 @@ func (ts *TransactionStore) GetTransactionChain(txHash string, includeAll bool) 
 		chain = append(chain[:0], append([]*transaction.Transaction{tx}, chain[0:]...)...)
 		if len(tx.Previous) > 0 {
 			tx, ok, _ = ts.GetTransaction(string(tx.Previous))
-		} else if tx.Type == transaction.OPEN && len(tx.Link) > 0 && includeAll {
+		} else if tx.Type == protocol.Transaction_OPEN && len(tx.Link) > 0 && includeAll {
 			tx, ok, _ = ts.GetTransaction(string(tx.Link))
 		} else {
 			break

@@ -3,6 +3,7 @@ package transaction
 import (
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/Error"
+	"github.com/msaldanha/realChain/protocol"
 )
 
 const (
@@ -27,7 +28,7 @@ type Validator interface {
 }
 
 type ValidatorCreator interface {
-	CreateValidatorForTransaction(txType Type, store keyvaluestore.Storer) (Validator)
+	CreateValidatorForTransaction(txType protocol.Transaction_Type, store keyvaluestore.Storer) Validator
 }
 
 type validatorCreator struct {
@@ -53,20 +54,22 @@ type ChangeValidator struct {
 	BaseValidator
 }
 
-func NewValidatorCreator() (ValidatorCreator) {
+func NewValidatorCreator() ValidatorCreator {
 	return &validatorCreator{}
 }
 
-func (*validatorCreator) CreateValidatorForTransaction(txType Type, store keyvaluestore.Storer) (Validator) {
+func (*validatorCreator) CreateValidatorForTransaction(txType protocol.Transaction_Type, store keyvaluestore.Storer) (Validator) {
 	switch txType {
-	case OPEN:
+	case protocol.Transaction_OPEN:
 		return &OpenValidator{BaseValidator{store}}
-	case SEND:
+	case protocol.Transaction_SEND:
 		return &SendValidator{BaseValidator{store}}
-	case RECEIVE:
+	case protocol.Transaction_RECEIVE:
 		return &ReceiveValidator{BaseValidator{store}}
-	case CHANGE:
+	case protocol.Transaction_CHANGE:
 		return &ChangeValidator{BaseValidator{store}}
+	default:
+		return &BaseValidator{store}
 	}
 	return nil
 }
@@ -76,7 +79,7 @@ func (v *BaseValidator) IsValid(tx *Transaction) (bool, error) {
 }
 
 func (v *BaseValidator) IsFilled(tx *Transaction) (bool, error) {
-	if !tx.Type.IsValid() {
+	if tx.Type < protocol.Transaction_OPEN || tx.Type > protocol.Transaction_CHANGE {
 		return false, ErrInvalidTransactionType
 	}
 	if tx.Timestamp <= 0 {
@@ -85,7 +88,7 @@ func (v *BaseValidator) IsFilled(tx *Transaction) (bool, error) {
 	if len(tx.Address) == 0 {
 		return false, ErrTransactionAddressCantBeEmpty
 	}
-	if len(tx.Previous) == 0 && !v.store.IsEmpty() && tx.Type != OPEN {
+	if len(tx.Previous) == 0 && !v.store.IsEmpty() && tx.Type != protocol.Transaction_OPEN {
 		return false, ErrPreviousTransactionCantBeEmpty
 	}
 	if len(tx.Signature) == 0 {
@@ -104,7 +107,7 @@ func (v *BaseValidator) IsFilled(tx *Transaction) (bool, error) {
 }
 
 func (v *OpenValidator) IsFilled(tx *Transaction) (bool, error) {
-	if !tx.Type.IsValid() || tx.Type != OPEN {
+	if tx.Type != protocol.Transaction_OPEN {
 		return false, ErrInvalidTransactionType
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {
@@ -133,7 +136,7 @@ func (v *OpenValidator) IsValid(tx *Transaction) (bool, error) {
 }
 
 func (v *SendValidator) IsFilled(tx *Transaction) (bool, error) {
-	if !tx.Type.IsValid() || tx.Type != SEND {
+	if tx.Type != protocol.Transaction_SEND {
 		return false, ErrInvalidTransactionType
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {
@@ -164,7 +167,7 @@ func (v *SendValidator) HasValidDestination(tx *Transaction) (bool, error) {
 }
 
 func (v *ReceiveValidator) IsFilled(tx *Transaction) (bool, error) {
-	if !tx.Type.IsValid() || tx.Type != RECEIVE {
+	if tx.Type != protocol.Transaction_RECEIVE {
 		return false, ErrInvalidTransactionType
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {
@@ -195,14 +198,14 @@ func (v *ReceiveValidator) HasValidSource(tx *Transaction) (bool, error) {
 		return false, ErrSourceNotFound
 	}
 	source := NewTransactionFromBytes(dest)
-	if source.Type != SEND {
+	if source.Type != protocol.Transaction_SEND {
 		return false, ErrInvalidSourceType
 	}
 	return true, nil
 }
 
 func (v *ChangeValidator) IsFilled(tx *Transaction) (bool, error) {
-	if !tx.Type.IsValid() || tx.Type != CHANGE {
+	if tx.Type != protocol.Transaction_CHANGE {
 		return false, ErrInvalidTransactionType
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {

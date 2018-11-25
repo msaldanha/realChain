@@ -1,6 +1,7 @@
 package transactionstore_test
 
 import (
+	"github.com/msaldanha/realChain/protocol"
 	"github.com/msaldanha/realChain/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -25,7 +26,7 @@ var _ = Describe("TransactionStore", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(transaction.ErrInvalidTransactionType))
 
-		tx = &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		tx = &transaction.Transaction{Type: protocol.Transaction_SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix(), PubKey: []byte("kkkkkkk")}
 		tx1, err := bs.Store(tx)
 		Expect(tx1).To(BeNil())
@@ -34,7 +35,7 @@ var _ = Describe("TransactionStore", func() {
 
 		tx.SetHash()
 
-		dest := &transaction.Transaction{Type: transaction.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		dest := &transaction.Transaction{Type: protocol.Transaction_OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: time.Now().Unix()}
 		ms.Put("ddddddddddddd", dest.ToBytes())
 
@@ -51,12 +52,12 @@ var _ = Describe("TransactionStore", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		tx := &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		tx := &transaction.Transaction{Type: protocol.Transaction_SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		tx.SetHash()
 
-		dest := &transaction.Transaction{Type: transaction.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
+		dest := &transaction.Transaction{Type: protocol.Transaction_OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		ms.Put("ddddddddddddd", dest.ToBytes())
 
@@ -76,14 +77,14 @@ var _ = Describe("TransactionStore", func() {
 		val := transaction.NewValidatorCreator()
 		bs := transactionstore.New(ms, val)
 
-		open := &transaction.Transaction{Type: transaction.OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		open := &transaction.Transaction{Type: protocol.Transaction_OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
 		open.SetHash()
 
 		tx, err := bs.Store(open)
 
-		tx = &transaction.Transaction{Type: transaction.SEND, Link: []byte("ddddddddddddd"), Previous: open.Hash,
+		tx = &transaction.Transaction{Type: protocol.Transaction_SEND, Link: []byte("ddddddddddddd"), Previous: open.Hash,
 			Signature: []byte("df0d25f706c31d2007ed91da185ac727e5e38bc77f4309bb587e1ff7557ace39"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk"),
 		}

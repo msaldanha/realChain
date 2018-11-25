@@ -1,6 +1,7 @@
 package transaction_test
 
 import (
+	"github.com/msaldanha/realChain/protocol"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/golang/mock/gomock"
@@ -12,7 +13,7 @@ var _ = Describe("Transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		tx := &Transaction{Type: RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		tx := &Transaction{Type: protocol.Transaction_RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("ssssssss"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"),
 			Timestamp: 1}
@@ -25,7 +26,7 @@ var _ = Describe("Transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		tx := &Transaction{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		tx := &Transaction{Type: protocol.Transaction_SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		tx.SetHash()
@@ -41,7 +42,7 @@ var _ = Describe("Transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		tx := &Transaction{Type: SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
+		tx := &Transaction{Type: protocol.Transaction_SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
 			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
 			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
 		tx.SetHash()

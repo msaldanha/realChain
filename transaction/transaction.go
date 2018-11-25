@@ -1,81 +1,40 @@
 package transaction
 
 import (
-	"fmt"
-	"strconv"
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/davecgh/go-xdr/xdr2"
-	"math/big"
+	"github.com/msaldanha/realChain/protocol"
 	"log"
 	"math"
-	"crypto/elliptic"
-	"crypto/ecdsa"
-	"crypto/rand"
+	"math/big"
+	"strconv"
 	"time"
 )
 
-type Type int16
-
 const targetBits int16 = 16
 
-const (
-	OPEN    Type = 1 + iota
-	SEND
-	RECEIVE
-	CHANGE
-)
+type Transaction protocol.Transaction
+type Type protocol.Transaction_Type
 
-type Transaction struct {
-	Timestamp      int64
-	Type           Type
-	Address        []byte
-	Representative []byte
-	Previous       []byte
-	Link           []byte
-	Balance        float64
-	Hash           []byte
-	Signature      []byte
-	PowTarget      int16
-	PowNonce       int64
-	PubKey         []byte
+func NewOpenTransaction() *Transaction {
+	return &Transaction{Type: protocol.Transaction_OPEN, Timestamp: time.Now().Unix()}
 }
 
-
-func NewOpenTransaction() (*Transaction) {
-	return &Transaction{Type: OPEN, Timestamp: time.Now().Unix()}
+func NewSendTransaction() *Transaction {
+	return &Transaction{Type: protocol.Transaction_SEND, Timestamp: time.Now().Unix()}
 }
 
-func NewSendTransaction() (*Transaction) {
-	return &Transaction{Type: SEND, Timestamp: time.Now().Unix()}
+func NewReceiveTransaction() *Transaction {
+	return &Transaction{Type: protocol.Transaction_RECEIVE, Timestamp: time.Now().Unix()}
 }
 
-func NewReceiveTransaction() (*Transaction) {
-	return &Transaction{Type: RECEIVE, Timestamp: time.Now().Unix()}
-}
-
-func (t Type) IsValid() (bool) {
-	return t >= OPEN && t <= CHANGE
-}
-
-func (t Type) String() (string) {
-	name := ""
-	switch t {
-	case OPEN:
-		name = "OPEN"
-	case SEND:
-		name = "SEND"
-	case RECEIVE:
-		name = "RECEIVE"
-	case CHANGE:
-		name = "CHANGE"
-	}
-	return fmt.Sprintf("%d(%s)", int(t), name)
-}
-
-func (tx *Transaction) SetHash() (error) {
+func (tx *Transaction) SetHash() error {
 	hash, err := tx.GetHash()
 	if err != nil {
 		return err
@@ -201,7 +160,7 @@ func NewTransactionFromBytes(d []byte) *Transaction {
 	return &tx
 }
 
-func getTarget() (*big.Int) {
+func getTarget() *big.Int {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
 	return target

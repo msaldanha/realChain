@@ -5,6 +5,7 @@ import (
 	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/ledger"
+	"github.com/msaldanha/realChain/protocol"
 	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/transactionstore"
 	"github.com/msaldanha/realChain/tests"
@@ -48,14 +49,14 @@ var _ = Describe("BoltKeyValueStore", func() {
 		tests.DumpTxChain(txChain)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(11))
-		Expect(txChain[10].Type).To(Equal(transaction.SEND))
+		Expect(txChain[10].Type).To(Equal(protocol.Transaction_SEND))
 		Expect(txChain[10].Balance).To(Equal(float64(0)))
 
 		txChain, err = bs.GetTransactionChain(string(prevReceiveTx.Hash), true)
 		tests.DumpTxChain(txChain)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(12))
-		Expect(txChain[11].Type).To(Equal(transaction.RECEIVE))
+		Expect(txChain[11].Type).To(Equal(protocol.Transaction_RECEIVE))
 		Expect(txChain[11].Balance).To(Equal(float64(1000)))
 	})
 })

@@ -5,6 +5,7 @@ import (
 	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/ledger"
+	"github.com/msaldanha/realChain/protocol"
 	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/transactionstore"
 	"github.com/msaldanha/realChain/tests"
@@ -184,7 +185,7 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(3))
 
-		Expect(txChain[2].Type).To(Equal(transaction.OPEN))
+		Expect(txChain[2].Type).To(Equal(protocol.Transaction_OPEN))
 		Expect(txChain[2].Balance).To(Equal(float64(400)))
 	})
 
@@ -298,13 +299,13 @@ var _ = Describe("Ledger", func() {
 		txChain, err := bs.GetTransactionChain(string(prevSendTx.Hash), true)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(11))
-		Expect(txChain[10].Type).To(Equal(transaction.SEND))
+		Expect(txChain[10].Type).To(Equal(protocol.Transaction_SEND))
 		Expect(txChain[10].Balance).To(Equal(float64(0)))
 
 		txChain, err = bs.GetTransactionChain(string(prevReceiveTx.Hash), true)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(12))
-		Expect(txChain[11].Type).To(Equal(transaction.RECEIVE))
+		Expect(txChain[11].Type).To(Equal(protocol.Transaction_RECEIVE))
 		Expect(txChain[11].Balance).To(Equal(float64(1000)))
 	})
 
@@ -328,18 +329,18 @@ var _ = Describe("Ledger", func() {
 		txChain, err := ld.GetAddressStatement(string(tx.Address))
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(11))
-		Expect(txChain[0].Type).To(Equal(transaction.OPEN))
+		Expect(txChain[0].Type).To(Equal(protocol.Transaction_OPEN))
 		Expect(txChain[0].Balance).To(Equal(float64(1000)))
-		Expect(txChain[10].Type).To(Equal(transaction.SEND))
+		Expect(txChain[10].Type).To(Equal(protocol.Transaction_SEND))
 		Expect(txChain[10].Balance).To(Equal(float64(0)))
 
 		tx, _, _ = bs.GetTransaction(string(prevReceiveTx.Hash))
 		txChain, err = ld.GetAddressStatement(string(tx.Address))
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(10))
-		Expect(txChain[0].Type).To(Equal(transaction.OPEN))
+		Expect(txChain[0].Type).To(Equal(protocol.Transaction_OPEN))
 		Expect(txChain[0].Balance).To(Equal(float64(100)))
-		Expect(txChain[9].Type).To(Equal(transaction.RECEIVE))
+		Expect(txChain[9].Type).To(Equal(protocol.Transaction_RECEIVE))
 		Expect(txChain[9].Balance).To(Equal(float64(1000)))
 	})
 
