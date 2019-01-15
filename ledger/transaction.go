@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/golang/protobuf/proto"
+	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/crypto"
 	"log"
 	"math"
@@ -29,6 +30,32 @@ func NewSendTransaction() *Transaction {
 
 func NewReceiveTransaction() *Transaction {
 	return &Transaction{Type: Transaction_RECEIVE, Timestamp: time.Now().UnixNano()}
+}
+
+
+func CreateGenesisTransaction(balance float64) (*Transaction, *address.Address, error) {
+	genesisTx := NewOpenTransaction()
+	addr, err := address.NewAddressWithKeys()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	genesisTx.Address = []byte(addr.Address)
+	genesisTx.Representative = genesisTx.Address
+	genesisTx.Balance = balance
+	genesisTx.PubKey = addr.Keys.PublicKey
+
+	err = genesisTx.SetPow()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = genesisTx.Sign(addr.Keys.ToEcdsaPrivateKey())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return genesisTx, addr, nil
 }
 
 func (tx *Transaction) SetHash() error {

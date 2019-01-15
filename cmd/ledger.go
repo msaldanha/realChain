@@ -47,30 +47,37 @@ var ledgerInitCmd = &cobra.Command{
 
 		val := ledger.NewValidatorCreator()
 		ts := ledger.NewTransactionStore(txStore, val)
-		//ld := ledger.NewLocalLedger(ts)
+		ld := ledger.NewLocalLedger(ts)
 		if !ts.IsEmpty() {
 			fmt.Println("Ledger already initialized")
 			os.Exit(1)
 		}
 		if len(args) == 0 {
-			fmt.Printf("Falied to initialize the Ledger: expected initial amount\n")
+			fmt.Printf("Failed to initialize the Ledger: expected initial amount\n")
 			os.Exit(1)
 		}
+
 		startAmount, err := strconv.ParseFloat(args[0], 64)
 		if err != nil {
-			fmt.Printf("Falied to initialize the Ledger: %s\n", err)
+			fmt.Printf("Failed to initialize the Ledger: %s\n", err)
 			os.Exit(1)
 		}
 		if startAmount == 0 {
-			fmt.Println("Falied to initialize the Ledger: amount must be > 0")
+			fmt.Println("Failed to initialize the Ledger: amount must be > 0")
 			os.Exit(1)
 		}
-		//TODO: fix me
-		//err := ld.Initialize(startAmount)
-		//if  err != nil {
-		//	fmt.Printf("Falied to initialize the Ledger: %s\n", err)
-		//	os.Exit(1)
-		//}
-		//fmt.Printf("Ledger successfuly initialized. Genesis address: %s, Start balance: %f", string(tx.Address), startAmount)
+
+		tx, addr, err := ledger.CreateGenesisTransaction(startAmount)
+		if  err != nil {
+			fmt.Printf("Failed to initialize the Ledger: %s\n", err)
+			os.Exit(1)
+		}
+
+		err = ld.Initialize(tx)
+		if  err != nil {
+			fmt.Printf("Failed to initialize the Ledger: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Ledger successfuly initialized. Genesis address: %s, Start balance: %f", addr.Address, startAmount)
 	},
 }
