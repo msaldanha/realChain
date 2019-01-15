@@ -28,7 +28,7 @@ var _ = Describe("Ledger", func() {
 		ld = ledger.NewLocalLedger(bs)
 	})
 
-	It("Should initialize the Genesis transaction", func() {
+	It("Should initialize with the Genesis transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
@@ -38,9 +38,25 @@ var _ = Describe("Ledger", func() {
 		tx, err := bs.Retrieve(string(genesisTx.Hash))
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
+	})
 
-		//address.IsValid("13N7kLsMvb5r85hbemba9UFkufXBgiVde")
-		//13fxKigmqhBEvQ5qgoJcbMyuL4jnn9guH
+	It("Should create Genesis transaction", func() {
+		mockCtrl := gomock.NewController(GinkgoT())
+		defer mockCtrl.Finish()
+
+		tx, addr, err := ledger.CreateGenesisTransaction(2000)
+
+		Expect(err).To(BeNil())
+		Expect(tx).NotTo(BeNil())
+		Expect(addr).NotTo(BeNil())
+
+		Expect(tx.Balance).To(Equal(float64(2000)))
+		Expect(tx.Address).To(Equal([]byte(addr.Address)))
+		Expect(tx.PubKey).To(Equal([]byte(addr.Keys.PublicKey)))
+		Expect(tx.Previous).To(BeNil())
+		Expect(tx.Link).To(BeNil())
+		Expect(tx.Signature).NotTo(BeNil())
+		Expect(tx.Hash).NotTo(BeNil())
 	})
 
 	It("Should get a transaction", func() {
