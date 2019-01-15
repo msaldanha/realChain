@@ -1,25 +1,24 @@
-package transaction
+package ledger
 
 import (
+	"github.com/msaldanha/realChain/errors"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"github.com/msaldanha/realChain/Error"
-	"github.com/msaldanha/realChain/protocol"
 )
 
 const (
-	ErrInvalidTransactionType               = Error.Error("invalid transaction type")
-	ErrInvalidTransactionTimestamp          = Error.Error("invalid transaction timestamp")
-	ErrTransactionAddressCantBeEmpty        = Error.Error("transaction address can not be empty")
-	ErrPreviousTransactionCantBeEmpty       = Error.Error("previous transaction can not be empty")
-	ErrTransactionSignatureCantBeEmpty      = Error.Error("transaction signature can not be empty")
-	ErrTransactionPowNonceCantBeZero        = Error.Error("transaction PoW nonce can not be zero")
-	ErrTransactionHashCantBeEmpty           = Error.Error("transaction hash can not be empty")
-	ErrTransactionLinkCantBeEmpty           = Error.Error("transaction link can not be empty")
-	ErrTransactionRepresentativeCantBeEmpty = Error.Error("transaction representative can not be empty")
-	ErrDestinationNotFound                  = Error.Error("destination not found")
-	ErrSourceNotFound                       = Error.Error("source not found")
-	ErrInvalidSourceType                    = Error.Error("invalid source type")
-	ErrPubKeyCantBeEmpty                    = Error.Error("transaction public key can not be empty")
+	ErrInvalidTransactionType               = errors.Error("invalid transaction type")
+	ErrInvalidTransactionTimestamp          = errors.Error("invalid transaction timestamp")
+	ErrTransactionAddressCantBeEmpty        = errors.Error("transaction address can not be empty")
+	ErrPreviousTransactionCantBeEmpty       = errors.Error("previous transaction can not be empty")
+	ErrTransactionSignatureCantBeEmpty      = errors.Error("transaction signature can not be empty")
+	ErrTransactionPowNonceCantBeZero        = errors.Error("transaction PoW nonce can not be zero")
+	ErrTransactionHashCantBeEmpty           = errors.Error("transaction hash can not be empty")
+	ErrTransactionLinkCantBeEmpty           = errors.Error("transaction link can not be empty")
+	ErrTransactionRepresentativeCantBeEmpty = errors.Error("transaction representative can not be empty")
+	ErrDestinationNotFound                  = errors.Error("destination not found")
+	ErrSourceNotFound                       = errors.Error("source not found")
+	ErrInvalidSourceType                    = errors.Error("invalid source type")
+	ErrPubKeyCantBeEmpty                    = errors.Error("transaction public key can not be empty")
 )
 
 type Validator interface {
@@ -28,7 +27,7 @@ type Validator interface {
 }
 
 type ValidatorCreator interface {
-	CreateValidatorForTransaction(txType protocol.Transaction_Type, store keyvaluestore.Storer) Validator
+	CreateValidatorForTransaction(txType Transaction_Type, store keyvaluestore.Storer) Validator
 }
 
 type validatorCreator struct {
@@ -58,15 +57,15 @@ func NewValidatorCreator() ValidatorCreator {
 	return &validatorCreator{}
 }
 
-func (*validatorCreator) CreateValidatorForTransaction(txType protocol.Transaction_Type, store keyvaluestore.Storer) (Validator) {
+func (*validatorCreator) CreateValidatorForTransaction(txType Transaction_Type, store keyvaluestore.Storer) (Validator) {
 	switch txType {
-	case protocol.Transaction_OPEN:
+	case Transaction_OPEN:
 		return &OpenValidator{BaseValidator{store}}
-	case protocol.Transaction_SEND:
+	case Transaction_SEND:
 		return &SendValidator{BaseValidator{store}}
-	case protocol.Transaction_RECEIVE:
+	case Transaction_RECEIVE:
 		return &ReceiveValidator{BaseValidator{store}}
-	case protocol.Transaction_CHANGE:
+	case Transaction_CHANGE:
 		return &ChangeValidator{BaseValidator{store}}
 	default:
 		return &BaseValidator{store}
@@ -79,7 +78,7 @@ func (v *BaseValidator) IsValid(tx *Transaction) (bool, error) {
 }
 
 func (v *BaseValidator) IsFilled(tx *Transaction) (bool, error) {
-	if tx.Type < protocol.Transaction_OPEN || tx.Type > protocol.Transaction_CHANGE {
+	if tx.Type < Transaction_OPEN || tx.Type > Transaction_CHANGE {
 		return false, ErrInvalidTransactionType
 	}
 	if tx.Timestamp <= 0 {
@@ -88,7 +87,7 @@ func (v *BaseValidator) IsFilled(tx *Transaction) (bool, error) {
 	if len(tx.Address) == 0 {
 		return false, ErrTransactionAddressCantBeEmpty
 	}
-	if len(tx.Previous) == 0 && !v.store.IsEmpty() && tx.Type != protocol.Transaction_OPEN {
+	if len(tx.Previous) == 0 && !v.store.IsEmpty() && tx.Type != Transaction_OPEN {
 		return false, ErrPreviousTransactionCantBeEmpty
 	}
 	if len(tx.Signature) == 0 {
@@ -107,7 +106,7 @@ func (v *BaseValidator) IsFilled(tx *Transaction) (bool, error) {
 }
 
 func (v *OpenValidator) IsFilled(tx *Transaction) (bool, error) {
-	if tx.Type != protocol.Transaction_OPEN {
+	if tx.Type != Transaction_OPEN {
 		return false, ErrInvalidTransactionType
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {
@@ -136,7 +135,7 @@ func (v *OpenValidator) IsValid(tx *Transaction) (bool, error) {
 }
 
 func (v *SendValidator) IsFilled(tx *Transaction) (bool, error) {
-	if tx.Type != protocol.Transaction_SEND {
+	if tx.Type != Transaction_SEND {
 		return false, ErrInvalidTransactionType
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {
@@ -167,7 +166,7 @@ func (v *SendValidator) HasValidDestination(tx *Transaction) (bool, error) {
 }
 
 func (v *ReceiveValidator) IsFilled(tx *Transaction) (bool, error) {
-	if tx.Type != protocol.Transaction_RECEIVE {
+	if tx.Type != Transaction_RECEIVE {
 		return false, ErrInvalidTransactionType
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {
@@ -198,14 +197,14 @@ func (v *ReceiveValidator) HasValidSource(tx *Transaction) (bool, error) {
 		return false, ErrSourceNotFound
 	}
 	source := NewTransactionFromBytes(dest)
-	if source.Type != protocol.Transaction_SEND {
+	if source.Type != Transaction_SEND {
 		return false, ErrInvalidSourceType
 	}
 	return true, nil
 }
 
 func (v *ChangeValidator) IsFilled(tx *Transaction) (bool, error) {
-	if tx.Type != protocol.Transaction_CHANGE {
+	if tx.Type != Transaction_CHANGE {
 		return false, ErrInvalidTransactionType
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {

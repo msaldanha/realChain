@@ -1,4 +1,4 @@
-package transactionstore_test
+package ledger_test
 
 import (
 	. "github.com/onsi/ginkgo"

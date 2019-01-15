@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"golang.org/x/crypto/ripemd160"
 	"bytes"
-	"github.com/msaldanha/realChain/Error"
+	"github.com/msaldanha/realChain/errors"
 	"github.com/msaldanha/realChain/keypair"
 	"github.com/davecgh/go-xdr/xdr2"
 	"fmt"
@@ -14,7 +14,7 @@ const version = byte(0x00)
 const addressChecksumLen = 4
 
 const (
-	ErrInvalidChecksum = Error.Error("invalid checksum")
+	ErrInvalidChecksum = errors.Error("invalid checksum")
 )
 
 type Address struct {
@@ -22,7 +22,7 @@ type Address struct {
 	Address string
 }
 
-func New() (*Address) {
+func New() *Address {
 	return &Address{}
 }
 
@@ -93,10 +93,6 @@ func generateAddressHash(pubKey []byte) ([]byte, error) {
 	fullPayload := append(versionedPayload, checksum...)
 	address := Base58Encode(fullPayload)
 
-	if ok, _ := IsValid(string(address)); !ok {
-		fmt.Printf("WARNING: Not valid addr generated: %s\n", string(address))
-	}
-
 	return address, nil
 }
 
@@ -107,12 +103,12 @@ func (a *Address) IsValid() (bool, error) {
 func hashPubKey(pubKey []byte) ([]byte, error) {
 	sha256Hash := sha256.Sum256(pubKey)
 
-	RIPEMD160Hasher := ripemd160.New()
-	_, err := RIPEMD160Hasher.Write(sha256Hash[:])
+	ripemd160Hasher := ripemd160.New()
+	_, err := ripemd160Hasher.Write(sha256Hash[:])
 	if err != nil {
 		return nil, err
 	}
-	return RIPEMD160Hasher.Sum(nil), nil
+	return ripemd160Hasher.Sum(nil), nil
 }
 
 func checksum(payload []byte) []byte {

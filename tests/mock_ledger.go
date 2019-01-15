@@ -6,7 +6,7 @@ package tests
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	transaction "github.com/msaldanha/realChain/transaction"
+	ledger "github.com/msaldanha/realChain/ledger"
 	reflect "reflect"
 )
 
@@ -34,9 +34,9 @@ func (m *MockLedger) EXPECT() *MockLedgerMockRecorder {
 }
 
 // GetAddressStatement mocks base method
-func (m *MockLedger) GetAddressStatement(arg0 string) ([]*transaction.Transaction, error) {
+func (m *MockLedger) GetAddressStatement(arg0 string) ([]*ledger.Transaction, error) {
 	ret := m.ctrl.Call(m, "GetAddressStatement", arg0)
-	ret0, _ := ret[0].([]*transaction.Transaction)
+	ret0, _ := ret[0].([]*ledger.Transaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -47,9 +47,9 @@ func (mr *MockLedgerMockRecorder) GetAddressStatement(arg0 interface{}) *gomock.
 }
 
 // GetLastTransaction mocks base method
-func (m *MockLedger) GetLastTransaction(arg0 string) (*transaction.Transaction, error) {
+func (m *MockLedger) GetLastTransaction(arg0 string) (*ledger.Transaction, error) {
 	ret := m.ctrl.Call(m, "GetLastTransaction", arg0)
-	ret0, _ := ret[0].(*transaction.Transaction)
+	ret0, _ := ret[0].(*ledger.Transaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -60,9 +60,9 @@ func (mr *MockLedgerMockRecorder) GetLastTransaction(arg0 interface{}) *gomock.C
 }
 
 // GetTransaction mocks base method
-func (m *MockLedger) GetTransaction(arg0 string) (*transaction.Transaction, error) {
+func (m *MockLedger) GetTransaction(arg0 string) (*ledger.Transaction, error) {
 	ret := m.ctrl.Call(m, "GetTransaction", arg0)
-	ret0, _ := ret[0].(*transaction.Transaction)
+	ret0, _ := ret[0].(*ledger.Transaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -73,7 +73,7 @@ func (mr *MockLedgerMockRecorder) GetTransaction(arg0 interface{}) *gomock.Call 
 }
 
 // Initialize mocks base method
-func (m *MockLedger) Initialize(arg0 *transaction.Transaction) error {
+func (m *MockLedger) Initialize(arg0 *ledger.Transaction) error {
 	ret := m.ctrl.Call(m, "Initialize", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -85,7 +85,7 @@ func (mr *MockLedgerMockRecorder) Initialize(arg0 interface{}) *gomock.Call {
 }
 
 // Register mocks base method
-func (m *MockLedger) Register(arg0, arg1 *transaction.Transaction) error {
+func (m *MockLedger) Register(arg0, arg1 *ledger.Transaction) error {
 	ret := m.ctrl.Call(m, "Register", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -96,8 +96,20 @@ func (mr *MockLedgerMockRecorder) Register(arg0, arg1 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockLedger)(nil).Register), arg0, arg1)
 }
 
+// Verify mocks base method
+func (m *MockLedger) Verify(arg0, arg1 *ledger.Transaction) error {
+	ret := m.ctrl.Call(m, "Verify", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Verify indicates an expected call of Verify
+func (mr *MockLedgerMockRecorder) Verify(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Verify", reflect.TypeOf((*MockLedger)(nil).Verify), arg0, arg1)
+}
+
 // VerifyTransaction mocks base method
-func (m *MockLedger) VerifyTransaction(arg0 *transaction.Transaction, arg1 bool) error {
+func (m *MockLedger) VerifyTransaction(arg0 *ledger.Transaction, arg1 bool) error {
 	ret := m.ctrl.Call(m, "VerifyTransaction", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -106,16 +118,4 @@ func (m *MockLedger) VerifyTransaction(arg0 *transaction.Transaction, arg1 bool)
 // VerifyTransaction indicates an expected call of VerifyTransaction
 func (mr *MockLedgerMockRecorder) VerifyTransaction(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyTransaction", reflect.TypeOf((*MockLedger)(nil).VerifyTransaction), arg0, arg1)
-}
-
-// VerifyTransactions mocks base method
-func (m *MockLedger) VerifyTransactions(arg0, arg1 *transaction.Transaction) error {
-	ret := m.ctrl.Call(m, "VerifyTransactions", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// VerifyTransactions indicates an expected call of VerifyTransactions
-func (mr *MockLedgerMockRecorder) VerifyTransactions(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyTransactions", reflect.TypeOf((*MockLedger)(nil).VerifyTransactions), arg0, arg1)
 }

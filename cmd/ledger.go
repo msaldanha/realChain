@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"github.com/msaldanha/realChain/config"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"github.com/msaldanha/realChain/transaction"
-	"github.com/msaldanha/realChain/transactionstore"
+	"github.com/msaldanha/realChain/ledger"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -46,8 +45,8 @@ var ledgerInitCmd = &cobra.Command{
 			log.Fatal("Failed to init ledger addresses" + err.Error())
 		}
 
-		val := transaction.NewValidatorCreator()
-		ts := transactionstore.New(txStore, val)
+		val := ledger.NewValidatorCreator()
+		ts := ledger.NewTransactionStore(txStore, val)
 		//ld := ledger.NewLocalLedger(ts)
 		if !ts.IsEmpty() {
 			fmt.Println("Ledger already initialized")

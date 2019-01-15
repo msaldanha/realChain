@@ -1,30 +1,30 @@
 package node
 
 import (
-	"github.com/msaldanha/realChain/config"
-	"github.com/msaldanha/realChain/ledger"
-	"github.com/msaldanha/realChain/keyvaluestore"
-	"github.com/msaldanha/realChain/transaction"
-	"github.com/msaldanha/realChain/transactionstore"
 	"fmt"
+	"github.com/msaldanha/realChain/errors"
+	"github.com/msaldanha/realChain/config"
+	"github.com/msaldanha/realChain/consensus"
+	"github.com/msaldanha/realChain/keyvaluestore"
+	"github.com/msaldanha/realChain/ledger"
+	"github.com/msaldanha/realChain/peerdiscovery"
+	"github.com/msaldanha/realChain/server"
+	"github.com/msaldanha/realChain/wallet"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"net"
 	"os"
 	"path/filepath"
-	"github.com/spf13/viper"
-	log "github.com/sirupsen/logrus"
-	"github.com/msaldanha/realChain/Error"
-	"github.com/msaldanha/realChain/network"
-	"github.com/msaldanha/realChain/wallet"
-	"github.com/msaldanha/realChain/consensus"
 )
 
-const ErrLedgerNotInitialized = Error.Error("ledger not initialized")
+const ErrLedgerNotInitialized = errors.Error("ledger not initialized")
 
 type Node struct {
 	ld  ledger.Ledger
 	cfg *viper.Viper
 }
 
-func New(cfg *viper.Viper) (*Node) {
+func New(cfg *viper.Viper) *Node {
 	return &Node{cfg: cfg}
 }
 
@@ -38,45 +38,24 @@ func (n *Node) Run() {
 	walletRestServer, err := NewWalletRestServer(wa, n.cfg.GetString(config.CfgWalletRestServer))
 	checkError(err)
 
-	ledgerRestServer, err := NewLedgerRestServer(ld, n.cfg.GetString(config.CfgNodeRestServer))
+	server, err := n.createServer(ld)
 	checkError(err)
 
-	net, err := n.createNetwork()
-	checkError(err)
-
-	con := consensus.New(net, ld)
-
-	udpch := make(chan error)
 	walletRestCh := make(chan error)
-	ledgerRestCh := make(chan error)
+	serverCh := make(chan error)
 
-	go func() { udpch <- net.Run() }()
 	go func() { walletRestCh <- walletRestServer.Run() }()
-	go func() { ledgerRestCh <- ledgerRestServer.Run() }()
-	go con.Run()
+	go func() { serverCh <- server.Run() }()
 
 	for {
 		select {
-		case eu := <-udpch:
-			checkError(eu)
 		case er := <-walletRestCh:
 			checkError(er)
-		case er := <-ledgerRestCh:
+		case er := <-serverCh:
 			checkError(er)
 		}
 	}
 	fmt.Println("Done.")
-}
-
-func (n *Node) createNetwork() (*network.Network, error) {
-	localUrl := n.cfg.GetString(config.CfgNodeNetworkLocal)
-	net, err := network.NewNetwork(localUrl)
-	if err != nil {
-		return nil, err
-	}
-	peers := n.cfg.GetStringSlice(config.CfgNodeNetworkPeers)
-	net.UsePeers(peers...)
-	return net, nil
 }
 
 func checkError(err error) {
@@ -103,8 +82,8 @@ func (n *Node) createLedger() (ledger.Ledger, error) {
 		log.Fatal("Failed to init ledger addresses" + err.Error())
 	}
 
-	val := transaction.NewValidatorCreator()
-	bs := transactionstore.New(txDb, val)
+	val := ledger.NewValidatorCreator()
+	bs := ledger.NewTransactionStore(txDb, val)
 	if bs.IsEmpty() {
 		return nil, ErrLedgerNotInitialized
 	}
@@ -131,12 +110,23 @@ func (n *Node) createWallet(ld ledger.Ledger) (*wallet.Wallet, error) {
 		log.Fatal("Failed to init wallet addresses" + err.Error())
 	}
 
-	val := transaction.NewValidatorCreator()
-	ts := transactionstore.New(txDb, val)
+	val := ledger.NewValidatorCreator()
+	ts := ledger.NewTransactionStore(txDb, val)
 
 	wa := wallet.New(ts, addrDb, ld)
 
 	return wa, nil
+}
+
+func (n *Node) createServer(ld ledger.Ledger) (*server.Server, error) {
+	consensus := consensus.NewConsensus(ld)
+	discovery := peerdiscovery.NewStaticDiscoverer()
+
+	listener, err := net.Listen("tcp", n.cfg.GetString(config.CfgNodeServer))
+	if err != nil {
+		return nil, err
+	}
+	return server.New(ld, consensus, discovery, listener), nil
 }
 
 func prepareOptions(bucketName, filepath string) *keyvaluestore.BoltKeyValueStoreOptions {

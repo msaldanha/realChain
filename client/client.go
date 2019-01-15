@@ -3,7 +3,7 @@ package client
 import (
 	"net"
 	"github.com/msaldanha/realChain/network"
-	"github.com/msaldanha/realChain/transaction"
+	"github.com/msaldanha/realChain/ledger"
 	"bytes"
 	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/kataras/iris/core/errors"
@@ -32,8 +32,8 @@ func New(serverUrl string) (*Client, error) {
 	return &Client{conn:conn}, nil
 }
 
-func (rs *Client) HandleTransaction(tx *transaction.Transaction) error {
-	err := rs.send("transaction.handle", tx.ToBytes())
+func (rs *Client) HandleTransaction(tx *ledger.Transaction) error {
+	err := rs.send("ledger.handle", tx.ToBytes())
 	if err != nil {
 		return err
 	}

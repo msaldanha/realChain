@@ -1,4 +1,4 @@
-package transaction_test
+package server_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestTransaction(t *testing.T) {
+func TestServer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Transaction Suite")
+	RunSpecs(t, "Server Suite")
 }

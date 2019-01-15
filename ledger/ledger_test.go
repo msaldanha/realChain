@@ -5,9 +5,6 @@ import (
 	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/ledger"
-	"github.com/msaldanha/realChain/protocol"
-	"github.com/msaldanha/realChain/transaction"
-	"github.com/msaldanha/realChain/transactionstore"
 	"github.com/msaldanha/realChain/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,15 +13,15 @@ import (
 var _ = Describe("Ledger", func() {
 
 	var ld ledger.Ledger
-	var genesisTx *transaction.Transaction
+	var genesisTx *ledger.Transaction
 	var genesisAddr *address.Address
-	var bs *transactionstore.TransactionStore
+	var bs *ledger.TransactionStore
 	var ms *keyvaluestore.MemoryKeyValueStore
 
 	BeforeEach(func () {
 		ms = keyvaluestore.NewMemoryKeyValueStore()
-		val := transaction.NewValidatorCreator()
-		bs = transactionstore.New(ms, val)
+		val := ledger.NewValidatorCreator()
+		bs = ledger.NewTransactionStore(ms, val)
 
 		genesisTx, genesisAddr = tests.CreateGenesisTransaction(1000)
 
@@ -185,7 +182,7 @@ var _ = Describe("Ledger", func() {
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(3))
 
-		Expect(txChain[2].Type).To(Equal(protocol.Transaction_OPEN))
+		Expect(txChain[2].Type).To(Equal(ledger.Transaction_OPEN))
 		Expect(txChain[2].Balance).To(Equal(float64(400)))
 	})
 
@@ -290,7 +287,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		var prevReceiveTx *transaction.Transaction
+		var prevReceiveTx *ledger.Transaction
 		prevSendTx := genesisTx
 		for x := 1; x <= 10; x++ {
 			prevSendTx, prevReceiveTx = tests.SendFunds(ld, genesisAddr, prevSendTx, prevReceiveTx, receiveAddr, 100)
@@ -299,13 +296,13 @@ var _ = Describe("Ledger", func() {
 		txChain, err := bs.GetTransactionChain(string(prevSendTx.Hash), true)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(11))
-		Expect(txChain[10].Type).To(Equal(protocol.Transaction_SEND))
+		Expect(txChain[10].Type).To(Equal(ledger.Transaction_SEND))
 		Expect(txChain[10].Balance).To(Equal(float64(0)))
 
 		txChain, err = bs.GetTransactionChain(string(prevReceiveTx.Hash), true)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(12))
-		Expect(txChain[11].Type).To(Equal(protocol.Transaction_RECEIVE))
+		Expect(txChain[11].Type).To(Equal(ledger.Transaction_RECEIVE))
 		Expect(txChain[11].Balance).To(Equal(float64(1000)))
 	})
 
@@ -319,7 +316,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		var prevReceiveTx *transaction.Transaction
+		var prevReceiveTx *ledger.Transaction
 		prevSendTx := genesisTx
 		for x := 1; x <= 10; x++ {
 			prevSendTx, prevReceiveTx = tests.SendFunds(ld, genesisAddr, prevSendTx, prevReceiveTx, receiveAddr, 100)
@@ -329,18 +326,18 @@ var _ = Describe("Ledger", func() {
 		txChain, err := ld.GetAddressStatement(string(tx.Address))
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(11))
-		Expect(txChain[0].Type).To(Equal(protocol.Transaction_OPEN))
+		Expect(txChain[0].Type).To(Equal(ledger.Transaction_OPEN))
 		Expect(txChain[0].Balance).To(Equal(float64(1000)))
-		Expect(txChain[10].Type).To(Equal(protocol.Transaction_SEND))
+		Expect(txChain[10].Type).To(Equal(ledger.Transaction_SEND))
 		Expect(txChain[10].Balance).To(Equal(float64(0)))
 
 		tx, _, _ = bs.GetTransaction(string(prevReceiveTx.Hash))
 		txChain, err = ld.GetAddressStatement(string(tx.Address))
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(10))
-		Expect(txChain[0].Type).To(Equal(protocol.Transaction_OPEN))
+		Expect(txChain[0].Type).To(Equal(ledger.Transaction_OPEN))
 		Expect(txChain[0].Balance).To(Equal(float64(100)))
-		Expect(txChain[9].Type).To(Equal(protocol.Transaction_RECEIVE))
+		Expect(txChain[9].Type).To(Equal(ledger.Transaction_RECEIVE))
 		Expect(txChain[9].Balance).To(Equal(float64(1000)))
 	})
 
@@ -354,7 +351,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		var prevReceiveTx *transaction.Transaction
+		var prevReceiveTx *ledger.Transaction
 		prevSendTx := genesisTx
 		for x := 1; x <= 2; x++ {
 			prevSendTx, prevReceiveTx = tests.SendFunds(ld, genesisAddr, prevSendTx, prevReceiveTx, receiveAddr, 100)
@@ -592,7 +589,7 @@ var _ = Describe("Ledger", func() {
 		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
-		err = ld.VerifyTransactions(receiveTx, sendTx)
+		err = ld.Verify(receiveTx, sendTx)
 		Expect(err).To(Equal(ledger.ErrInvalidSendTransaction))
 	})
 
@@ -609,7 +606,7 @@ var _ = Describe("Ledger", func() {
 		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		err = ld.VerifyTransactions(sendTx, sendTx)
+		err = ld.Verify(sendTx, sendTx)
 		Expect(err).To(Equal(ledger.ErrInvalidReceiveTransaction))
 	})
 
@@ -632,7 +629,7 @@ var _ = Describe("Ledger", func() {
 		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
-		err = ld.VerifyTransactions(sendTx2, receiveTx)
+		err = ld.Verify(sendTx2, receiveTx)
 		Expect(err).To(Equal(ledger.ErrSendReceiveTransactionsNotLinked))
 	})
 
@@ -655,10 +652,13 @@ var _ = Describe("Ledger", func() {
 		err = ld.Register(sendTx, receiveTx)
 		Expect(err).To(BeNil())
 
+		_ = ms.Put(string(sendTx.Hash), nil)
+		_ = ms.Put(string(sendTx.Address), genesisTx.ToBytes())
+
 		receiveTx2, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
-		err = ld.VerifyTransactions(sendTx, receiveTx2)
+		err = ld.Verify(sendTx, receiveTx2)
 		Expect(err).To(Equal(ledger.ErrSendTransactionIsNotPending))
 	})
 
@@ -678,7 +678,7 @@ var _ = Describe("Ledger", func() {
 		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
-		err = ld.VerifyTransactions(sendTx, receiveTx)
+		err = ld.Verify(sendTx, receiveTx)
 		Expect(err).To(Equal(ledger.ErrSentAmountDiffersFromReceivedAmount))
 	})
 
@@ -695,7 +695,7 @@ var _ = Describe("Ledger", func() {
 		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, genesisAddr, nil)
 		Expect(err).To(BeNil())
 
-		err = ld.VerifyTransactions(sendTx, receiveTx)
+		err = ld.Verify(sendTx, receiveTx)
 		Expect(err).To(Equal(ledger.ErrSendReceiveTransactionsCantBeSameAddress))
 	})
 })

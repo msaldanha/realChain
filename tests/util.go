@@ -3,7 +3,6 @@ package tests
 import (
 	"github.com/msaldanha/realChain/ledger"
 	. "github.com/onsi/gomega"
-	"github.com/msaldanha/realChain/transaction"
 	"time"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"fmt"
@@ -11,65 +10,65 @@ import (
 	"github.com/msaldanha/realChain/address"
 )
 
-func AssertCommonVal(val transaction.Validator, tx *transaction.Transaction) {
+func AssertCommonVal(val ledger.Validator, tx *ledger.Transaction) {
 	ok, err := val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(transaction.ErrInvalidTransactionTimestamp))
+	Expect(err).To(Equal(ledger.ErrInvalidTransactionTimestamp))
 
 	tx.Timestamp = time.Now().Unix()
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(transaction.ErrTransactionAddressCantBeEmpty))
+	Expect(err).To(Equal(ledger.ErrTransactionAddressCantBeEmpty))
 
 	tx.Address = []byte("xxxxxxxxxxxxxxxxxxx")
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(transaction.ErrPreviousTransactionCantBeEmpty))
+	Expect(err).To(Equal(ledger.ErrPreviousTransactionCantBeEmpty))
 
 	tx.Previous = []byte("yyyyyyyyyyyyyyyyyyyy")
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(transaction.ErrTransactionSignatureCantBeEmpty))
+	Expect(err).To(Equal(ledger.ErrTransactionSignatureCantBeEmpty))
 
 	tx.Signature = []byte("ssssssssssssssssssssss")
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(transaction.ErrTransactionPowNonceCantBeZero))
+	Expect(err).To(Equal(ledger.ErrTransactionPowNonceCantBeZero))
 
 	tx.PowNonce = 1
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(transaction.ErrTransactionHashCantBeEmpty))
+	Expect(err).To(Equal(ledger.ErrTransactionHashCantBeEmpty))
 
 	tx.SetHash()
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
-	Expect(err).To(Equal(transaction.ErrPubKeyCantBeEmpty))
+	Expect(err).To(Equal(ledger.ErrPubKeyCantBeEmpty))
 
 	tx.PubKey = []byte("ssssssssssssssssssssss")
 }
 
 func CreateNonEmptyMemoryStore() *keyvaluestore.MemoryKeyValueStore {
 	ms := keyvaluestore.NewMemoryKeyValueStore()
-	tx := &transaction.Transaction{}
+	tx := &ledger.Transaction{}
 	ms.Put("genesis", tx.ToBytes())
 	return ms
 }
 
-func DumpTxChain(txChain []*transaction.Transaction) {
+func DumpTxChain(txChain []*ledger.Transaction) {
 	fmt.Println("============= Transaction Chain Dump start =================")
 	level := 0
 	for _, v := range txChain {
@@ -86,8 +85,8 @@ func CreateTestAddress() *address.Address {
 	return addr
 }
 
-func CreateSendTransaction(fromTip *transaction.Transaction, fromAddr *address.Address, to string, amount float64) (*transaction.Transaction, error) {
-	send := transaction.NewSendTransaction()
+func CreateSendTransaction(fromTip *ledger.Transaction, fromAddr *address.Address, to string, amount float64) (*ledger.Transaction, error) {
+	send := ledger.NewSendTransaction()
 	send.Address = fromTip.Address
 	send.Link = []byte(to)
 	send.Previous = fromTip.Hash
@@ -98,18 +97,18 @@ func CreateSendTransaction(fromTip *transaction.Transaction, fromAddr *address.A
 	return send, nil
 }
 
-func CreateReceiveTransaction(send *transaction.Transaction, amount float64, receiveAddr *address.Address,
-	receiveTip *transaction.Transaction) (*transaction.Transaction, error) {
+func CreateReceiveTransaction(send *ledger.Transaction, amount float64, receiveAddr *address.Address,
+	receiveTip *ledger.Transaction) (*ledger.Transaction, error) {
 
-	var receive *transaction.Transaction
+	var receive *ledger.Transaction
 	if receiveTip != nil {
-		receive = transaction.NewReceiveTransaction()
+		receive = ledger.NewReceiveTransaction()
 		receive.Previous = receiveTip.Hash
 		receive.Balance = receiveTip.Balance + amount
 		receive.Representative = receiveTip.Representative
 		receive.PubKey = receiveTip.PubKey
 	} else {
-		receive = transaction.NewOpenTransaction()
+		receive = ledger.NewOpenTransaction()
 		receive.Balance = amount
 		receive.Representative = send.Link
 		receive.PubKey = receiveAddr.Keys.PublicKey
@@ -129,8 +128,8 @@ func CreateReceiveTransaction(send *transaction.Transaction, amount float64, rec
 	return receive, nil
 }
 
-func CreateGenesisTransaction(balance float64) (*transaction.Transaction, *address.Address) {
-	genesisTx := transaction.NewOpenTransaction()
+func CreateGenesisTransaction(balance float64) (*ledger.Transaction, *address.Address) {
+	genesisTx := ledger.NewOpenTransaction()
 	addr, err := address.NewAddressWithKeys()
 	Expect(err).To(BeNil())
 
@@ -149,8 +148,8 @@ func CreateGenesisTransaction(balance float64) (*transaction.Transaction, *addre
 }
 
 
-func SendFunds(ld ledger.Ledger, sendAddr *address.Address, prevSendTx *transaction.Transaction, prevReceiveTx *transaction.Transaction,
-		receiveAddr *address.Address, amount float64) (*transaction.Transaction, *transaction.Transaction) {
+func SendFunds(ld ledger.Ledger, sendAddr *address.Address, prevSendTx *ledger.Transaction, prevReceiveTx *ledger.Transaction,
+		receiveAddr *address.Address, amount float64) (*ledger.Transaction, *ledger.Transaction) {
 	sendTx, err := CreateSendTransaction(prevSendTx, sendAddr, receiveAddr.Address, amount)
 	Expect(err).To(BeNil())
 

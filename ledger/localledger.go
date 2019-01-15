@@ -3,21 +3,18 @@ package ledger
 import (
 	"bytes"
 	"github.com/msaldanha/realChain/address"
-	"github.com/msaldanha/realChain/protocol"
-	"github.com/msaldanha/realChain/transaction"
-	"github.com/msaldanha/realChain/transactionstore"
 	"math"
 )
 
 type LocalLedger struct {
-	ts        *transactionstore.TransactionStore
+	ts        *TransactionStore
 }
 
-func NewLocalLedger(txStore *transactionstore.TransactionStore) (*LocalLedger) {
+func NewLocalLedger(txStore *TransactionStore) *LocalLedger {
 	return &LocalLedger{ts:txStore}
 }
 
-func (ld *LocalLedger) Initialize(genesisTx *transaction.Transaction) (error) {
+func (ld *LocalLedger) Initialize(genesisTx *Transaction) error {
 	if !ld.ts.IsEmpty() {
 		return ErrLedgerAlreadyInitialized
 	}
@@ -25,7 +22,15 @@ func (ld *LocalLedger) Initialize(genesisTx *transaction.Transaction) (error) {
 	return ld.saveTransaction(genesisTx)
 }
 
-func (ld *LocalLedger) Register(sendTx *transaction.Transaction, receiveTx *transaction.Transaction) (error) {
+func (ld *LocalLedger) Register(sendTx *Transaction, receiveTx *Transaction) error {
+	if err := ld.Verify(sendTx, receiveTx); err != nil {
+		return err
+	}
+
+	return ld.saveTransactions(sendTx, receiveTx)
+}
+
+func (ld *LocalLedger) Verify(sendTx *Transaction, receiveTx *Transaction) error {
 	if err := ld.VerifyTransaction(sendTx, true); err != nil {
 		return err
 	}
@@ -34,14 +39,10 @@ func (ld *LocalLedger) Register(sendTx *transaction.Transaction, receiveTx *tran
 		return err
 	}
 
-	if err := ld.VerifyTransactions(sendTx, receiveTx); err != nil {
-		return err
-	}
-
-	return ld.saveTransactions(sendTx, receiveTx)
+	return ld.verifyTransactions(sendTx, receiveTx)
 }
 
-func (ld *LocalLedger) GetLastTransaction(address string) (*transaction.Transaction, error) {
+func (ld *LocalLedger) GetLastTransaction(address string) (*Transaction, error) {
 	fromTipTx, err := ld.ts.Retrieve(address)
 	if err != nil {
 		return nil, err
@@ -49,7 +50,7 @@ func (ld *LocalLedger) GetLastTransaction(address string) (*transaction.Transact
 	return fromTipTx, nil
 }
 
-func (ld *LocalLedger) GetTransaction(hash string) (*transaction.Transaction, error) {
+func (ld *LocalLedger) GetTransaction(hash string) (*Transaction, error) {
 	tx, err := ld.ts.Retrieve(hash)
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (ld *LocalLedger) GetTransaction(hash string) (*transaction.Transaction, er
 	return tx, nil
 }
 
-func (ld *LocalLedger) GetAddressStatement(address string) ([]*transaction.Transaction, error) {
+func (ld *LocalLedger) GetAddressStatement(address string) ([]*Transaction, error) {
 	txChain, err := ld.ts.GetTransactionChain(address, false)
 	if err != nil {
 		return nil, err
@@ -65,7 +66,7 @@ func (ld *LocalLedger) GetAddressStatement(address string) ([]*transaction.Trans
 	return txChain, nil
 }
 
-func (ld *LocalLedger) VerifyTransaction(tx *transaction.Transaction, isNew bool) (error) {
+func (ld *LocalLedger) VerifyTransaction(tx *Transaction, isNew bool) error {
 	if ok, err := ld.verifyAddress(tx); !ok {
 		return err
 	}
@@ -89,7 +90,7 @@ func (ld *LocalLedger) VerifyTransaction(tx *transaction.Transaction, isNew bool
 		return ErrTransactionNotFound
 	}
 
-	if tx.Type != protocol.Transaction_OPEN {
+	if tx.Type != Transaction_OPEN {
 		previous, err := ld.ts.Retrieve(string(tx.Previous))
 		if err != nil {
 			return err
@@ -111,7 +112,7 @@ func (ld *LocalLedger) VerifyTransaction(tx *transaction.Transaction, isNew bool
 		}
 	}
 
-	if tx.Type == protocol.Transaction_SEND {
+	if tx.Type == Transaction_SEND {
 		amount, err := ld.findBalanceDiffWithPrevious(tx)
 		if err != nil {
 			return err
@@ -129,12 +130,12 @@ func (ld *LocalLedger) VerifyTransaction(tx *transaction.Transaction, isNew bool
 	return nil
 }
 
-func (ld *LocalLedger) VerifyTransactions(sendTx *transaction.Transaction, receiveTx *transaction.Transaction) (error) {
-	if sendTx.Type != protocol.Transaction_SEND {
+func (ld *LocalLedger) verifyTransactions(sendTx *Transaction, receiveTx *Transaction) error {
+	if sendTx.Type != Transaction_SEND {
 		return ErrInvalidSendTransaction
 	}
 
-	if receiveTx.Type != protocol.Transaction_OPEN && receiveTx.Type != protocol.Transaction_RECEIVE {
+	if receiveTx.Type != Transaction_OPEN && receiveTx.Type != Transaction_RECEIVE {
 		return ErrInvalidReceiveTransaction
 	}
 
@@ -171,7 +172,7 @@ func (ld *LocalLedger) VerifyTransactions(sendTx *transaction.Transaction, recei
 	return nil
 }
 
-func (ld *LocalLedger) saveTransaction(tx *transaction.Transaction) (error) {
+func (ld *LocalLedger) saveTransaction(tx *Transaction) error {
 	_, err := ld.ts.Store(tx)
 	if err != nil {
 		return err
@@ -179,8 +180,8 @@ func (ld *LocalLedger) saveTransaction(tx *transaction.Transaction) (error) {
 	return nil
 }
 
-func (ld *LocalLedger) saveTransactions(sendTx *transaction.Transaction, receiveTx *transaction.Transaction) (error) {
-	err := ld.VerifyTransactions(sendTx, receiveTx)
+func (ld *LocalLedger) saveTransactions(sendTx *Transaction, receiveTx *Transaction) error {
+	err := ld.verifyTransactions(sendTx, receiveTx)
 	if err != nil {
 		return err
 	}
@@ -198,13 +199,13 @@ func (ld *LocalLedger) saveTransactions(sendTx *transaction.Transaction, receive
 	return nil
 }
 
-func (ld *LocalLedger) verifyPow(tx *transaction.Transaction) bool {
+func (ld *LocalLedger) verifyPow(tx *Transaction) bool {
 	ok, _ := tx.VerifyPow()
 	return ok
 }
 
-func (ld *LocalLedger) isPendingTransaction(tx *transaction.Transaction) (bool, error) {
-	if tx.Type != protocol.Transaction_SEND {
+func (ld *LocalLedger) isPendingTransaction(tx *Transaction) (bool, error) {
+	if tx.Type != Transaction_SEND {
 		return false, nil
 	}
 	target, err := ld.GetLastTransaction(string(tx.Link))
@@ -226,13 +227,13 @@ func (ld *LocalLedger) isPendingTransaction(tx *transaction.Transaction) (bool, 
 	return true, nil
 }
 
-func (ld *LocalLedger) findAbsoluteBalanceDiffWithPrevious(tx *transaction.Transaction) (float64, error) {
+func (ld *LocalLedger) findAbsoluteBalanceDiffWithPrevious(tx *Transaction) (float64, error) {
 	amount, err := ld.findBalanceDiffWithPrevious(tx)
 	return math.Abs(amount), err
 }
 
-func (ld *LocalLedger) findBalanceDiffWithPrevious(tx *transaction.Transaction) (float64, error) {
-	if tx.Type == protocol.Transaction_OPEN {
+func (ld *LocalLedger) findBalanceDiffWithPrevious(tx *Transaction) (float64, error) {
+	if tx.Type == Transaction_OPEN {
 		return tx.Balance, nil
 	}
 	previous, err := ld.findPrevious(tx)
@@ -245,14 +246,14 @@ func (ld *LocalLedger) findBalanceDiffWithPrevious(tx *transaction.Transaction) 
 	return previous.Balance - tx.Balance, nil
 }
 
-func (ld *LocalLedger) findPrevious(tx *transaction.Transaction) (*transaction.Transaction, error) {
-	if tx.Type != protocol.Transaction_OPEN {
+func (ld *LocalLedger) findPrevious(tx *Transaction) (*Transaction, error) {
+	if tx.Type != Transaction_OPEN {
 		return ld.ts.Retrieve(string(tx.Previous))
 	}
 	return ld.ts.Retrieve(string(tx.Link))
 }
 
-func (ld *LocalLedger) verifyAddress(tx *transaction.Transaction) (bool, error) {
+func (ld *LocalLedger) verifyAddress(tx *Transaction) (bool, error) {
 	if ok, err := address.IsValid(string(tx.Address)); !ok {
 		return ok, err
 	}
@@ -262,29 +263,29 @@ func (ld *LocalLedger) verifyAddress(tx *transaction.Transaction) (bool, error) 
 	return true, nil
 }
 
-func (ld *LocalLedger) verifyLinkAddress(tx *transaction.Transaction) (bool, error) {
-	if tx.Type == protocol.Transaction_SEND {
+func (ld *LocalLedger) verifyLinkAddress(tx *Transaction) (bool, error) {
+	if tx.Type == Transaction_SEND {
 		return address.IsValid(string(tx.Link))
 	}
 	return true, nil
 }
 
-func (ld *LocalLedger) getOpenTransaction(tx *transaction.Transaction) (*transaction.Transaction, error) {
+func (ld *LocalLedger) getOpenTransaction(tx *Transaction) (*Transaction, error) {
 	var ret = tx
 	var err error
-	for ret != nil && ret.Type != protocol.Transaction_OPEN {
+	for ret != nil && ret.Type != Transaction_OPEN {
 		ret, err = ld.getPreviousTransaction(ret)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if ret != nil && ret.Type == protocol.Transaction_OPEN {
+	if ret != nil && ret.Type == Transaction_OPEN {
 		return ret, nil
 	}
 	return nil, nil
 }
 
-func (ld *LocalLedger) getPreviousTransaction(tx *transaction.Transaction) (*transaction.Transaction, error) {
+func (ld *LocalLedger) getPreviousTransaction(tx *Transaction) (*Transaction, error) {
 	previous, err := ld.ts.Retrieve(string(tx.Previous))
 	if err != nil {
 		return nil, err

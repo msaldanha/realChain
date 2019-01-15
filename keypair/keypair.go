@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"github.com/msaldanha/realChain/util"
 	"math/big"
 )
 
@@ -18,7 +19,7 @@ func New() (*KeyPair, error) {
 	if err != nil {
 		return nil, err
 	}
-	pubKey := append(private.PublicKey.X.Bytes(), private.PublicKey.Y.Bytes()...)
+	pubKey := append(util.LeftPadBytes(private.PublicKey.X.Bytes(), 32), util.LeftPadBytes(private.PublicKey.Y.Bytes(), 32)...)
 	return &KeyPair{PrivateKey:private.D.Bytes(), PublicKey:pubKey}, nil
 }
 
@@ -39,6 +40,5 @@ func (ld *KeyPair) ToEcdsaPrivateKey() *ecdsa.PrivateKey {
 	privateKey.PublicKey.X.SetBytes(ld.PublicKey[:len(ld.PublicKey)/2])
 	privateKey.PublicKey.Y.SetBytes(ld.PublicKey[len(ld.PublicKey)/2:])
 
-	//privateKey.PublicKey.X, privateKey.PublicKey.Y = curve.ScalarBaseMult(D.Bytes())
 	return &privateKey
 }

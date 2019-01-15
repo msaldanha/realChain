@@ -1,27 +1,25 @@
 package wallet
 
 import (
-	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/address"
-	"github.com/msaldanha/realChain/transactionstore"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/ledger"
-	"github.com/msaldanha/realChain/Error"
+	"github.com/msaldanha/realChain/errors"
 )
 
-const ErrAddressNotManagedByThisWallet       = Error.Error("address not managed by this wallet")
+const ErrAddressNotManagedByThisWallet       = errors.Error("address not managed by this wallet")
 
 type Wallet struct {
 	ld        ledger.Ledger
-	ts        *transactionstore.TransactionStore
+	ts        *ledger.TransactionStore
 	addresses keyvaluestore.Storer
 }
 
-func New(txStore *transactionstore.TransactionStore, addressStore keyvaluestore.Storer, ld ledger.Ledger) (*Wallet) {
+func New(txStore *ledger.TransactionStore, addressStore keyvaluestore.Storer, ld ledger.Ledger) (*Wallet) {
 	return &Wallet{ld:ld, ts: txStore, addresses: addressStore}
 }
 
-func (wa *Wallet) CreateSendTransaction(from, to string, amount float64) (*transaction.Transaction, error) {
+func (wa *Wallet) CreateSendTransaction(from, to string, amount float64) (*ledger.Transaction, error) {
 	fromTipTx, err := wa.ts.Retrieve(from)
 
 	if err != nil {
@@ -53,11 +51,11 @@ func (wa *Wallet) CreateSendTransaction(from, to string, amount float64) (*trans
 	return tx, nil
 }
 
-func (wa *Wallet) GetAddressStatement(address string) ([]*transaction.Transaction, error) {
+func (wa *Wallet) GetAddressStatement(address string) ([]*ledger.Transaction, error) {
 	return wa.ld.GetAddressStatement(address)
 }
 
-func (wa *Wallet) GetLastTransaction(address string) (*transaction.Transaction, error) {
+func (wa *Wallet) GetLastTransaction(address string) (*ledger.Transaction, error) {
 	return wa.ld.GetLastTransaction(address)
 }
 
@@ -83,13 +81,13 @@ func (wa *Wallet) CreateAddress() (*address.Address, error) {
 	return addr, nil
 }
 
-func (wa *Wallet) createSendTransaction(fromTip *transaction.Transaction, to []byte, amount float64) (*transaction.Transaction, error) {
+func (wa *Wallet) createSendTransaction(fromTip *ledger.Transaction, to []byte, amount float64) (*ledger.Transaction, error) {
 	addr, err := wa.GetAddress(fromTip.Address)
 	if err != nil {
 		return nil, err
 	}
 
-	send := transaction.NewSendTransaction()
+	send := ledger.NewSendTransaction()
 	send.Address = fromTip.Address
 	send.Link = to
 	send.Previous = fromTip.Hash
@@ -101,7 +99,6 @@ func (wa *Wallet) createSendTransaction(fromTip *transaction.Transaction, to []b
 	if err := send.Sign(addr.Keys.ToEcdsaPrivateKey()); err != nil {
 		return nil, err
 	}
-
 
 	return send, nil
 }

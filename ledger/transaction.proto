@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package ledger;
+
+option go_package = "ledger";
+
+message Transaction {
+
+    enum Type {
+        ZERO = 0;
+        OPEN = 1;
+        SEND = 2;
+        RECEIVE = 3;
+        CHANGE = 4;
+    }
+
+    int64 Timestamp = 1;
+    Type type = 2;
+    bytes address = 3;
+    bytes representative = 4;
+    bytes previous = 5;
+    bytes link = 6;
+    double balance = 7;
+    int32 powTarget = 8;
+    int64 powNonce = 9;
+    bytes hash = 10;
+    bytes pubKey = 11;
+    bytes signature = 12;
+
+}

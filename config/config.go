@@ -7,7 +7,7 @@ const (
 	CfgWalletChainFile     = "wallet.chain"
 	CfgWalletAddressesFile = "wallet.addresses"
 	CfgWalletRestServer    = "wallet.restserver"
-	CfgNodeRestServer      = "node.restserver"
+	CfgNodeServer          = "node.server"
 	CfgUdpServer           = "node.udpserver"
 	CfgNodeNetworkLocal    = "node.network.local"
 	CfgNodeNetworkPeers    = "node.network.peers"

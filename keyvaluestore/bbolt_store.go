@@ -2,13 +2,13 @@ package keyvaluestore
 
 import (
 	"github.com/coreos/bbolt"
-	"github.com/msaldanha/realChain/Error"
+	"github.com/msaldanha/realChain/errors"
 	"time"
 )
 
 const (
-	ErrExpectedBoltKeyValueStoreOptions = Error.Error("expected BoltKeyValueStoreOptions type")
-	ErrInvalidBucketName                = Error.Error("invalid bucket name")
+	ErrExpectedBoltKeyValueStoreOptions = errors.Error("expected BoltKeyValueStoreOptions type")
+	ErrInvalidBucketName                = errors.Error("invalid bucket name")
 )
 
 type BoltKeyValueStoreOptions struct {
@@ -21,11 +21,11 @@ type BoltKeyValueStore struct {
 	BucketName string
 }
 
-func NewBoltKeyValueStore() (*BoltKeyValueStore) {
+func NewBoltKeyValueStore() *BoltKeyValueStore {
 	return &BoltKeyValueStore{}
 }
 
-func (st *BoltKeyValueStore) Init(options interface{}) (error) {
+func (st *BoltKeyValueStore) Init(options interface{}) error {
 	if _, ok := options.(*BoltKeyValueStoreOptions); !ok {
 		return ErrExpectedBoltKeyValueStoreOptions
 	}

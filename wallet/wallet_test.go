@@ -4,16 +4,14 @@ import (
 	"github.com/msaldanha/realChain/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/msaldanha/realChain/transactionstore"
 	"github.com/golang/mock/gomock"
 	"github.com/msaldanha/realChain/keyvaluestore"
-	"github.com/msaldanha/realChain/transaction"
 	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/wallet"
 	"github.com/msaldanha/realChain/ledger"
 )
 
-var ts *transactionstore.TransactionStore
+var ts *ledger.TransactionStore
 
 var _ = Describe("Wallet", func() {
 	It("Should send funds if acc has funds to send", func() {
@@ -104,8 +102,8 @@ var _ = Describe("Wallet", func() {
 	})
 })
 
-func createFirstTx() (*transaction.Transaction, *address.Address) {
-	tx := transaction.NewOpenTransaction()
+func createFirstTx() (*ledger.Transaction, *address.Address) {
+	tx := ledger.NewOpenTransaction()
 	addr, _ := address.NewAddressWithKeys()
 	tx.Address = []byte(addr.Address)
 	tx.Representative = tx.Address
@@ -116,11 +114,11 @@ func createFirstTx() (*transaction.Transaction, *address.Address) {
 	return tx, addr
 }
 
-func createWallet(ld ledger.Ledger) (*wallet.Wallet, *transaction.Transaction, *address.Address) {
+func createWallet(ld ledger.Ledger) (*wallet.Wallet, *ledger.Transaction, *address.Address) {
 	ms := keyvaluestore.NewMemoryKeyValueStore()
 	as := keyvaluestore.NewMemoryKeyValueStore()
-	val := transaction.NewValidatorCreator()
-	ts = transactionstore.New(ms, val)
+	val := ledger.NewValidatorCreator()
+	ts = ledger.NewTransactionStore(ms, val)
 
 	firstTx, addr := createFirstTx()
 

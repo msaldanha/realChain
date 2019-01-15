@@ -5,9 +5,6 @@ import (
 	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/keyvaluestore"
 	"github.com/msaldanha/realChain/ledger"
-	"github.com/msaldanha/realChain/protocol"
-	"github.com/msaldanha/realChain/transaction"
-	"github.com/msaldanha/realChain/transactionstore"
 	"github.com/msaldanha/realChain/tests"
 	"os"
 	"path/filepath"
@@ -27,8 +24,8 @@ var _ = Describe("BoltKeyValueStore", func() {
 		err = txStore.Init(bklStoreOptions)
 		Expect(err).To(BeNil())
 
-		val := transaction.NewValidatorCreator()
-		bs := transactionstore.New(txStore, val)
+		val := ledger.NewValidatorCreator()
+		bs := ledger.NewTransactionStore(txStore, val)
 
 		ld := ledger.NewLocalLedger(bs)
 
@@ -39,7 +36,7 @@ var _ = Describe("BoltKeyValueStore", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		var prevReceiveTx *transaction.Transaction
+		var prevReceiveTx *ledger.Transaction
 		prevSendTx := genesisTx
 		for x := 1; x <= 10; x++ {
 			prevSendTx, prevReceiveTx = tests.SendFunds(ld, genesisAddr, prevSendTx, prevReceiveTx, receiveAddr, 100)
@@ -49,14 +46,14 @@ var _ = Describe("BoltKeyValueStore", func() {
 		tests.DumpTxChain(txChain)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(11))
-		Expect(txChain[10].Type).To(Equal(protocol.Transaction_SEND))
+		Expect(txChain[10].Type).To(Equal(ledger.Transaction_SEND))
 		Expect(txChain[10].Balance).To(Equal(float64(0)))
 
 		txChain, err = bs.GetTransactionChain(string(prevReceiveTx.Hash), true)
 		tests.DumpTxChain(txChain)
 		Expect(err).To(BeNil())
 		Expect(len(txChain)).To(Equal(12))
-		Expect(txChain[11].Type).To(Equal(protocol.Transaction_RECEIVE))
+		Expect(txChain[11].Type).To(Equal(ledger.Transaction_RECEIVE))
 		Expect(txChain[11].Balance).To(Equal(float64(1000)))
 	})
 })

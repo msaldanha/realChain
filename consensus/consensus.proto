@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+import "ledger/transaction.proto";
+
+service Consensus {
+    rpc Vote (VoteRequest) returns (VoteResult) {
+    }
+    rpc Accept (AcceptRequest) returns (AcceptResult) {
+    }
+}
+
+message VoteRequest {
+    ledger.Transaction sendTx = 1;
+    ledger.Transaction receiveTx = 2;
+}
+
+message Vote {
+    bool ok = 1;
+    string reason = 2;
+    bytes pubKey = 3;
+    bytes signature = 4;
+}
+
+message VoteResult {
+    Vote vote = 1;
+}
+
+message AcceptRequest {
+    ledger.Transaction sendTx = 1;
+    ledger.Transaction receiveTx = 2;
+    repeated Vote votes = 3;
+}
+
+message AcceptResult {
+
+}

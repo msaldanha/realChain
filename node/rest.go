@@ -1,12 +1,12 @@
 package node
 
 import (
-	"github.com/msaldanha/realChain/Error"
+	"github.com/msaldanha/realChain/errors"
 	"github.com/kataras/iris"
 	"github.com/msaldanha/realChain/address"
 	log "github.com/sirupsen/logrus"
 	"encoding/hex"
-	"github.com/msaldanha/realChain/transaction"
+	"github.com/msaldanha/realChain/ledger"
 	"strings"
 )
 
@@ -50,7 +50,7 @@ func mapToAddressDto(acc *address.Address, balance float64) *AddressDto {
 	return addrDto
 }
 
-func mapToTransactionDtos(txchain []*transaction.Transaction) []*TransactionDto {
+func mapToTransactionDtos(txchain []*ledger.Transaction) []*TransactionDto {
 	txs := make([]*TransactionDto, 0)
 	for _, v := range txchain {
 		tx := mapToTransactionDto(v)
@@ -59,7 +59,7 @@ func mapToTransactionDtos(txchain []*transaction.Transaction) []*TransactionDto 
 	return txs
 }
 
-func mapToTransactionDto(tx *transaction.Transaction) *TransactionDto {
+func mapToTransactionDto(tx *ledger.Transaction) *TransactionDto {
 	return &TransactionDto{
 		Id:        string(tx.Hash),
 		Address:   string(tx.Address),
@@ -83,7 +83,7 @@ func setError(ctx iris.Context, err error) {
 	if strings.Contains(err.Error(), "not found") {
 		ctx.StatusCode(404)
 	} else {
-		if _, ok := err.(Error.Error); ok {
+		if _, ok := err.(errors.Error); ok {
 			ctx.StatusCode(400)
 		} else {
 			ctx.StatusCode(500)

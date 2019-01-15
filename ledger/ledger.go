@@ -1,38 +1,38 @@
 package ledger
 
 import (
-	"github.com/msaldanha/realChain/Error"
-	"github.com/msaldanha/realChain/transaction"
+	"github.com/msaldanha/realChain/errors"
 )
 
 const (
-	ErrLedgerAlreadyInitialized                 = Error.Error("ledger already initialized")
-	ErrNotEnoughFunds                           = Error.Error("not enough funds")
-	ErrInvalidTransactionSignature              = Error.Error("invalid transaction signature")
-	ErrInvalidTransactionHash                   = Error.Error("invalid transaction hash")
-	ErrTransactionAlreadyInLedger               = Error.Error("transaction already in ledger")
-	ErrTransactionNotFound                      = Error.Error("previous not found")
-	ErrPreviousTransactionNotFound              = Error.Error("previous transaction not found")
-	ErrHeadTransactionNotFound                  = Error.Error("head transaction not found")
-	ErrPreviousTransactionIsNotHead             = Error.Error("previous transaction is not the chain head")
-	ErrSendTransactionIsNotPending              = Error.Error("send transaction is not pending")
-	ErrOpenTransactionNotFound                  = Error.Error("open transaction not found")
-	ErrAddressDoesNotMatchPubKey                = Error.Error("address does not match public key")
-	ErrSendReceiveTransactionsNotLinked         = Error.Error("send and receive transaction not linked")
-	ErrSendReceiveTransactionsCantBeSameAddress = Error.Error("send and receive can not be on the same address")
-	ErrSentAmountDiffersFromReceivedAmount      = Error.Error("sent amount differs from received amount")
-	ErrInvalidReceiveTransaction                = Error.Error("invalid receive transaction")
-	ErrInvalidSendTransaction                   = Error.Error("invalid send transaction")
+	ErrLedgerAlreadyInitialized                 = errors.Error("ledger already initialized")
+	ErrNotEnoughFunds                           = errors.Error("not enough funds")
+	ErrInvalidTransactionSignature              = errors.Error("invalid transaction signature")
+	ErrInvalidTransactionHash                   = errors.Error("invalid transaction hash")
+	ErrTransactionAlreadyInLedger               = errors.Error("transaction already in ledger")
+	ErrTransactionNotFound                      = errors.Error("previous not found")
+	ErrPreviousTransactionNotFound              = errors.Error("previous transaction not found")
+	ErrHeadTransactionNotFound                  = errors.Error("head transaction not found")
+	ErrPreviousTransactionIsNotHead             = errors.Error("previous transaction is not the chain head")
+	ErrSendTransactionIsNotPending              = errors.Error("send transaction is not pending")
+	ErrOpenTransactionNotFound                  = errors.Error("open transaction not found")
+	ErrAddressDoesNotMatchPubKey                = errors.Error("address does not match public key")
+	ErrSendReceiveTransactionsNotLinked         = errors.Error("send and receive transaction not linked")
+	ErrSendReceiveTransactionsCantBeSameAddress = errors.Error("send and receive can not be on the same address")
+	ErrSentAmountDiffersFromReceivedAmount      = errors.Error("sent amount differs from received amount")
+	ErrInvalidReceiveTransaction                = errors.Error("invalid receive transaction")
+	ErrInvalidSendTransaction                   = errors.Error("invalid send transaction")
 )
 
+//go:generate protoc -I.. ledger/ledgerserver.proto --go_out=plugins=grpc:../
 //go:generate mockgen -destination=../tests/mock_ledger.go -package=tests github.com/msaldanha/realChain/ledger Ledger
 
 type Ledger interface {
-	Initialize(genesisTx *transaction.Transaction) (error)
-	GetLastTransaction(address string) (*transaction.Transaction, error)
-	GetTransaction(hash string) (*transaction.Transaction, error)
-	GetAddressStatement(address string) ([]*transaction.Transaction, error)
-	Register(sendTx *transaction.Transaction, receiveTx *transaction.Transaction) (err error)
-	VerifyTransaction(tx *transaction.Transaction, isNew bool) error
-	VerifyTransactions(sendTx *transaction.Transaction, receiveTx *transaction.Transaction) (error)
+	Initialize(genesisTx *Transaction) error
+	GetLastTransaction(address string) (*Transaction, error)
+	GetTransaction(hash string) (*Transaction, error)
+	GetAddressStatement(address string) ([]*Transaction, error)
+	Register(sendTx *Transaction, receiveTx *Transaction) error
+	VerifyTransaction(tx *Transaction, isNew bool) error
+	Verify(sendTx *Transaction, receiveTx *Transaction) error
 }

@@ -1,15 +1,13 @@
-package transaction
+package ledger
 
 import (
 	"bytes"
 	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/golang/protobuf/proto"
-	"github.com/msaldanha/realChain/protocol"
+	"github.com/msaldanha/realChain/crypto"
 	"log"
 	"math"
 	"math/big"
@@ -17,24 +15,24 @@ import (
 	"time"
 )
 
+//go:generate protoc -I.. ledger/transaction.proto --go_out=plugins=grpc:../
+
 const targetBits int16 = 16
 
-type Transaction protocol.Transaction
-
 func NewOpenTransaction() *Transaction {
-	return &Transaction{Type: protocol.Transaction_OPEN, Timestamp: time.Now().Unix()}
+	return &Transaction{Type: Transaction_OPEN, Timestamp: time.Now().UnixNano()}
 }
 
 func NewSendTransaction() *Transaction {
-	return &Transaction{Type: protocol.Transaction_SEND, Timestamp: time.Now().Unix()}
+	return &Transaction{Type: Transaction_SEND, Timestamp: time.Now().UnixNano()}
 }
 
 func NewReceiveTransaction() *Transaction {
-	return &Transaction{Type: protocol.Transaction_RECEIVE, Timestamp: time.Now().Unix()}
+	return &Transaction{Type: Transaction_RECEIVE, Timestamp: time.Now().UnixNano()}
 }
 
 func (tx *Transaction) SetHash() error {
-	hash, err := tx.GetHash()
+	hash, err := tx.CalculateHash()
 	if err != nil {
 		return err
 	}
@@ -42,7 +40,7 @@ func (tx *Transaction) SetHash() error {
 	return nil
 }
 
-func (tx *Transaction) GetHash() ([]byte, error) {
+func (tx *Transaction) CalculateHash() ([]byte, error) {
 	hashableBytes, err := tx.GetHashableBytes()
 	if err != nil {
 		return nil, err
@@ -118,44 +116,27 @@ func (tx *Transaction) VerifyPow() (bool, error) {
 }
 
 func (tx *Transaction) Sign(privateKey *ecdsa.PrivateKey) error {
-	r, s, err := ecdsa.Sign(rand.Reader, privateKey, tx.Hash)
+	s, err := crypto.Sign(tx.Hash, privateKey)
 	if err != nil {
 		return err
 	}
-	tx.Signature = append(r.Bytes(), s.Bytes()...)
+	tx.Signature = s
 	return nil
 }
 
 func (tx *Transaction) VerifySignature() bool {
-	r := big.Int{}
-	s := big.Int{}
-	sigLen := len(tx.Signature)
-	r.SetBytes(tx.Signature[:(sigLen / 2)])
-	s.SetBytes(tx.Signature[(sigLen / 2):])
-
-	x := big.Int{}
-	y := big.Int{}
-	keyLen := len(tx.PubKey)
-	x.SetBytes(tx.PubKey[:(keyLen / 2)])
-	y.SetBytes(tx.PubKey[(keyLen / 2):])
-
-	curve := elliptic.P256()
-	rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
-
-	return ecdsa.Verify(&rawPubKey, tx.Hash, &r, &s)
+	return crypto.VerifySignature(tx.Signature, tx.PubKey, tx.Hash)
 }
 
 func (tx *Transaction) ToBytes() []byte {
-	message := protocol.Transaction(*tx)
-	data, _ := proto.Marshal(&message)
+	data, _ := proto.Marshal(tx)
 	return data
 }
 
 func NewTransactionFromBytes(d []byte) *Transaction {
-	message := &protocol.Transaction{}
-	_ = proto.Unmarshal(d, message)
-	tx := Transaction(*message)
-	return &tx
+	tx := &Transaction{}
+	_ = proto.Unmarshal(d, tx)
+	return tx
 }
 
 func getTarget() *big.Int {
