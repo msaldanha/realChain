@@ -1,13 +1,17 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"gopkg.in/resty.v1"
-	"github.com/msaldanha/realChain/config"
-	"fmt"
-	"os"
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"github.com/msaldanha/realChain/config"
+	"github.com/msaldanha/realChain/keyvaluestore"
+	"github.com/msaldanha/realChain/ledger"
+	"github.com/msaldanha/realChain/wallet"
+	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -22,13 +26,15 @@ var walletListAddrsCmd = &cobra.Command{
 	Short: "Lists all managed addresses",
 	Long:  `Lists all managed addresses`,
 	Run: func(cmd *cobra.Command, args []string) {
-		resp, err := resty.R().Get(getApiUrl("/wallet/addresses"))
+		wa := getWallet()
+		addrs, err := wa.GetAddresses()
 		if err != nil {
-			fmt.Printf("List addresses failed: %s (%s)", err, string(resp.Body()))
+			fmt.Printf("List addresses failed: %s \n", err)
 			os.Exit(1)
 			return
 		}
-		fmt.Printf("Addresses: \n%s\n", getPrettyJson(resp.Body()))
+
+		fmt.Printf("Addresses: \n%s\n", getPrettyJson(addrs))
 	},
 }
 
@@ -37,18 +43,15 @@ var walletCreateAddressCmd = &cobra.Command{
 	Short: "Creates an address",
 	Long:  `Creates an address`,
 	Run: func(cmd *cobra.Command, args []string) {
-		resp, err := resty.R().Post(getApiUrl("/wallet/addresses"))
+		wa := getWallet()
+		addr, err := wa.CreateAddress()
 		if err != nil {
-			fmt.Printf("Create address failed: %s (%s)\n", err, string(resp.Body()))
+			fmt.Printf("Create address failed: %s \n", err)
 			os.Exit(1)
 			return
 		}
-		if resp.StatusCode() != 200 {
-			fmt.Printf("Create address failed: %d (%s)\n", resp.StatusCode(), resp.Status())
-			os.Exit(1)
-			return
-		}
-		fmt.Printf("Address: \n%s\n", getPrettyJson(resp.Body()))
+
+		fmt.Printf("Address: \n%s\n", getPrettyJson(addr))
 	},
 }
 
@@ -62,13 +65,16 @@ var walletListAddressStatementCmd = &cobra.Command{
 			os.Exit(1)
 			return
 		}
-		resp, err := resty.R().Get(getApiUrl("/wallet/addresses" + "/" + args[0] + "/statement"))
+
+		wa := getWallet()
+		st, err := wa.GetAddressStatement(args[0])
 		if err != nil {
-			fmt.Printf("List address statement failed: %s (%s)", err, string(resp.Body()))
+			fmt.Printf("List address statement failed: %s \n", err)
 			os.Exit(1)
 			return
 		}
-		fmt.Printf("Statement for address %s : \n%s\n", args[0], getPrettyJson(resp.Body()))
+
+		fmt.Printf("Statement for address %s : \n%s\n", args[0], getPrettyJson(st))
 	},
 }
 
@@ -82,31 +88,51 @@ var walletSendCmd = &cobra.Command{
 			os.Exit(1)
 			return
 		}
+
 		amount, err := strconv.ParseFloat(args[2], 64)
 		if err != nil {
 			fmt.Printf("Failed reading [amount]: %s\n", err)
 			os.Exit(1)
 		}
-		body := fmt.Sprintf(`{"from": "%s","to": "%s","amount": %f}`, args[0], args[1], amount)
-		resp, err := resty.R().
-			SetBody(body).
-			Post(getApiUrl("/wallet/tx"))
+
+		wa := getWallet()
+		tx, err := wa.Transfer(args[0], args[1], amount)
 		if err != nil {
-			fmt.Printf("Send transaction failed: %s (%s)", err, string(resp.Body()))
+			fmt.Printf("Send transaction failed: %s \n", err)
 			os.Exit(1)
 			return
 		}
-		fmt.Printf("Send transaction created : \n%s\n", getPrettyJson(resp.Body()))
+
+		fmt.Printf("Send transaction created : \n%s\n", getPrettyJson(tx))
 	},
 }
 
-func getPrettyJson(jsonBytes []byte) string {
+func getPrettyJson(v interface{}) string {
 	var prettyJSON bytes.Buffer
-	json.Indent(&prettyJSON, jsonBytes, "", "\t")
+	jsonBytes, _ := json.Marshal(v)
+	_ = json.Indent(&prettyJSON, jsonBytes, "", "\t")
 	return prettyJSON.String()
 }
 
-func getApiUrl(resource string) string {
-	api := cfg.GetString(config.CfgWalletRestServer)
-	return "http://" + api + resource
+func getWallet() *wallet.Wallet {
+	options := &keyvaluestore.BoltKeyValueStoreOptions{DbFile: filepath.Join(cfg.GetString(config.CfgDataFolder),
+		cfg.GetString(config.CfgWalletAddressesFile)), BucketName: "Addresses"}
+
+	as := keyvaluestore.NewBoltKeyValueStore()
+
+	err := as.Init(options)
+	if err != nil {
+		fmt.Printf("Wallet address store init failed: %s ", err)
+		os.Exit(1)
+	}
+
+	conn, err := grpc.Dial(cfg.GetString(config.CfgNodeServer), grpc.WithInsecure())
+	if err != nil {
+		fmt.Printf("Wallet connection to ledger failed: %s ", err)
+		os.Exit(1)
+	}
+
+	ld := ledger.NewLedgerClient(conn)
+
+	return wallet.New(as, ld)
 }

@@ -32,7 +32,6 @@ func NewReceiveTransaction() *Transaction {
 	return &Transaction{Type: Transaction_RECEIVE, Timestamp: time.Now().UnixNano()}
 }
 
-
 func CreateGenesisTransaction(balance float64) (*Transaction, *address.Address, error) {
 	genesisTx := NewOpenTransaction()
 	addr, err := address.NewAddressWithKeys()
@@ -56,6 +55,56 @@ func CreateGenesisTransaction(balance float64) (*Transaction, *address.Address, 
 	}
 
 	return genesisTx, addr, nil
+}
+
+func CreateSendTransaction(fromTipTx *Transaction, fromAddr *address.Address, to string,
+		amount float64) (*Transaction, error) {
+	sendTx := NewSendTransaction()
+	sendTx.Address = fromTipTx.Address
+	sendTx.Link = []byte(to)
+	sendTx.Previous = fromTipTx.Hash
+	sendTx.Balance = fromTipTx.Balance - amount
+	sendTx.PubKey = fromTipTx.PubKey
+
+	if err := sendTx.SetPow(); err != nil {
+		return nil, err
+	}
+
+	if err := sendTx.Sign(fromAddr.Keys.ToEcdsaPrivateKey()); err != nil {
+		return nil, err
+	}
+
+	return sendTx, nil
+}
+
+func CreateReceiveTransaction(send *Transaction, amount float64, receiveAddr *address.Address,
+		receiveTipTx *Transaction) (*Transaction, error) {
+	var receiveTx *Transaction
+	if receiveTipTx != nil {
+		receiveTx = NewReceiveTransaction()
+		receiveTx.Previous = receiveTipTx.Hash
+		receiveTx.Balance = receiveTipTx.Balance + amount
+		receiveTx.Representative = receiveTipTx.Representative
+		receiveTx.PubKey = receiveTipTx.PubKey
+	} else {
+		receiveTx = NewOpenTransaction()
+		receiveTx.Balance = amount
+		receiveTx.Representative = send.Link
+		receiveTx.PubKey = receiveAddr.Keys.PublicKey
+	}
+
+	receiveTx.Address = send.Link
+	receiveTx.Link = send.Hash
+
+	if err := receiveTx.SetPow(); err != nil {
+		return nil, err
+	}
+
+	if err := receiveTx.Sign(receiveAddr.Keys.ToEcdsaPrivateKey()); err != nil {
+		return nil, err
+	}
+
+	return receiveTx, nil
 }
 
 func (tx *Transaction) SetHash() error {

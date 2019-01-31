@@ -17,6 +17,8 @@ service Ledger {
     }
     rpc Verify (VerifyRequest) returns (VerifyResult) {
     }
+    rpc GetAddressStatement (GetAddressStatementRequest) returns (GetAddressStatementResult) {
+    }
 }
 
 message RegisterRequest {
@@ -59,4 +61,12 @@ message VerifyRequest {
 
 message VerifyResult {
 
+}
+
+message GetAddressStatementRequest {
+    string address = 1;
+}
+
+message GetAddressStatementResult {
+    repeated Transaction txs = 1;
 }

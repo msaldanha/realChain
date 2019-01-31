@@ -22,7 +22,7 @@ func init() {
 
 	cfg.SetDefault(config.CfgDataFolder, "./")
 	cfg.SetDefault(config.CfgLedgerChainFile, "chain.db")
-	cfg.SetDefault(config.CfgLedgerAddressesFile, "addresses.db")
+	cfg.SetDefault(config.CfgNodeAddressesFile, "addresses.db")
 	cfg.SetDefault(config.CfgWalletChainFile, "wchain.db")
 	cfg.SetDefault(config.CfgWalletAddressesFile, "waddresses.db")
 	cfg.SetDefault(config.CfgNodeServer, "localhost:1300")
@@ -37,6 +37,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 
 	nodeCmd.AddCommand(nodeServerCmd)
+	nodeCmd.AddCommand(nodeInitCmd)
 	rootCmd.AddCommand(nodeCmd)
 
 	ledgerCmd.AddCommand(ledgerInitCmd)

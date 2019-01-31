@@ -85,49 +85,6 @@ func CreateTestAddress() *address.Address {
 	return addr
 }
 
-func CreateSendTransaction(fromTip *ledger.Transaction, fromAddr *address.Address, to string, amount float64) (*ledger.Transaction, error) {
-	send := ledger.NewSendTransaction()
-	send.Address = fromTip.Address
-	send.Link = []byte(to)
-	send.Previous = fromTip.Hash
-	send.Balance = fromTip.Balance - amount
-	send.PubKey = fromTip.PubKey
-	send.SetPow()
-	send.Sign(fromAddr.Keys.ToEcdsaPrivateKey())
-	return send, nil
-}
-
-func CreateReceiveTransaction(send *ledger.Transaction, amount float64, receiveAddr *address.Address,
-	receiveTip *ledger.Transaction) (*ledger.Transaction, error) {
-
-	var receive *ledger.Transaction
-	if receiveTip != nil {
-		receive = ledger.NewReceiveTransaction()
-		receive.Previous = receiveTip.Hash
-		receive.Balance = receiveTip.Balance + amount
-		receive.Representative = receiveTip.Representative
-		receive.PubKey = receiveTip.PubKey
-	} else {
-		receive = ledger.NewOpenTransaction()
-		receive.Balance = amount
-		receive.Representative = send.Link
-		receive.PubKey = receiveAddr.Keys.PublicKey
-	}
-
-	receive.Address = send.Link
-	receive.Link = send.Hash
-
-	if err := receive.SetPow(); err != nil {
-		return nil, err
-	}
-
-	if err := receive.Sign(receiveAddr.Keys.ToEcdsaPrivateKey()); err != nil {
-		return nil, err
-	}
-
-	return receive, nil
-}
-
 func CreateGenesisTransaction(balance float64) (*ledger.Transaction, *address.Address) {
 	genesisTx := ledger.NewOpenTransaction()
 	addr, err := address.NewAddressWithKeys()
@@ -150,10 +107,10 @@ func CreateGenesisTransaction(balance float64) (*ledger.Transaction, *address.Ad
 
 func SendFunds(ld ledger.Ledger, sendAddr *address.Address, prevSendTx *ledger.Transaction, prevReceiveTx *ledger.Transaction,
 		receiveAddr *address.Address, amount float64) (*ledger.Transaction, *ledger.Transaction) {
-	sendTx, err := CreateSendTransaction(prevSendTx, sendAddr, receiveAddr.Address, amount)
+	sendTx, err := ledger.CreateSendTransaction(prevSendTx, sendAddr, receiveAddr.Address, amount)
 	Expect(err).To(BeNil())
 
-	receiveTx, err := CreateReceiveTransaction(sendTx, amount, receiveAddr, prevReceiveTx)
+	receiveTx, err := ledger.CreateReceiveTransaction(sendTx, amount, receiveAddr, prevReceiveTx)
 	Expect(err).To(BeNil())
 
 	err = ld.Register(sendTx, receiveTx)

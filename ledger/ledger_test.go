@@ -94,10 +94,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 300)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 300)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, receiveTx)
@@ -124,10 +124,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 300)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 300)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		receiveTx.Address = []byte("xxxxxxxxxxxxx")
@@ -151,10 +151,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 1300)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 1300)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 1300, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 1300, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, receiveTx)
@@ -175,10 +175,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, receiveTx)
@@ -212,10 +212,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		// Tamper with balance
@@ -245,10 +245,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, receiveTx)
@@ -262,7 +262,7 @@ var _ = Describe("Ledger", func() {
 		ms.Put(string(sendTx.Hash), nil)
 		ms.Put(string(sendTx.Address), genesisTx.ToBytes())
 
-		newReceiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, receiveTx)
+		newReceiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, receiveTx)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, newReceiveTx)
@@ -280,10 +280,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		sendTx.PubKey[0] = sendTx.PubKey[0] + 1
@@ -394,7 +394,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 350)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 350)
 		Expect(err).To(BeNil())
 
 		sendTx.Balance = 350
@@ -413,7 +413,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 350)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 350)
 		Expect(err).To(BeNil())
 
 		sendTx.Signature = sendTx.Hash
@@ -432,10 +432,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, receiveTx)
@@ -455,7 +455,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
 		err = ld.VerifyTransaction(sendTx, false)
@@ -472,7 +472,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
 		ms.Put(string(genesisTx.Hash), nil)
@@ -492,7 +492,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
 		ms.Put(string(genesisTx.Address), nil)
@@ -511,16 +511,16 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, receiveTx)
 		Expect(err).To(BeNil())
 
-		sendTx2, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 100)
+		sendTx2, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 100)
 		Expect(err).To(BeNil())
 
 		err = ld.VerifyTransaction(sendTx2, true)
@@ -537,7 +537,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, -1)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, -1)
 		Expect(err).To(BeNil())
 
 		err = ld.VerifyTransaction(sendTx, true)
@@ -554,7 +554,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 1001)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 1001)
 		Expect(err).To(BeNil())
 
 		err = ld.VerifyTransaction(sendTx, true)
@@ -571,16 +571,16 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, receiveTx)
 		Expect(err).To(BeNil())
 
-		sendTx2, err := tests.CreateSendTransaction(sendTx, genesisAddr, receiveAddr.Address, 100)
+		sendTx2, err := ledger.CreateSendTransaction(sendTx, genesisAddr, receiveAddr.Address, 100)
 		Expect(err).To(BeNil())
 
 		ms.Put(string(genesisTx.Hash), nil)
@@ -599,10 +599,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Verify(receiveTx, sendTx)
@@ -619,7 +619,7 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
 		err = ld.Verify(sendTx, sendTx)
@@ -636,13 +636,13 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		sendTx2, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 600)
+		sendTx2, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 600)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Verify(sendTx2, receiveTx)
@@ -659,10 +659,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Register(sendTx, receiveTx)
@@ -671,7 +671,7 @@ var _ = Describe("Ledger", func() {
 		_ = ms.Put(string(sendTx.Hash), nil)
 		_ = ms.Put(string(sendTx.Address), genesisTx.ToBytes())
 
-		receiveTx2, err := tests.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
+		receiveTx2, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Verify(sendTx, receiveTx2)
@@ -688,10 +688,10 @@ var _ = Describe("Ledger", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Verify(sendTx, receiveTx)
@@ -705,10 +705,10 @@ var _ = Describe("Ledger", func() {
 		err := ld.Initialize(genesisTx)
 		Expect(err).To(BeNil())
 
-		sendTx, err := tests.CreateSendTransaction(genesisTx, genesisAddr, genesisAddr.Address, 400)
+		sendTx, err := ledger.CreateSendTransaction(genesisTx, genesisAddr, genesisAddr.Address, 400)
 		Expect(err).To(BeNil())
 
-		receiveTx, err := tests.CreateReceiveTransaction(sendTx, 400, genesisAddr, nil)
+		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, genesisAddr, nil)
 		Expect(err).To(BeNil())
 
 		err = ld.Verify(sendTx, receiveTx)

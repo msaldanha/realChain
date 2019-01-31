@@ -26,6 +26,7 @@ const (
 
 //go:generate protoc -I.. ledger/ledgerserver.proto --go_out=plugins=grpc:../
 //go:generate mockgen -destination=../tests/mock_ledger.go -package=tests github.com/msaldanha/realChain/ledger Ledger
+//go:generate mockgen -destination=../tests/mock_ledgerclient.go -package=tests github.com/msaldanha/realChain/ledger LedgerClient
 
 type Ledger interface {
 	Initialize(genesisTx *Transaction) error

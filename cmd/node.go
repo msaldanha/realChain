@@ -20,3 +20,13 @@ var nodeServerCmd = &cobra.Command{
 		node.Run()
 	},
 }
+
+var nodeInitCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Init node configuration.",
+	Long:  `Init node configuration creating node address keys.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		node := node.New(cfg)
+		node.Init()
+	},
+}

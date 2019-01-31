@@ -14,45 +14,63 @@ import (
 var ts *ledger.TransactionStore
 
 var _ = Describe("Wallet", func() {
+
+	var mockCtrl *gomock.Controller
+	var wa *wallet.Wallet
+	var firstTx *ledger.Transaction
+	var ld *tests.MockLedgerClient
+
+	BeforeEach(func () {
+		mockCtrl = gomock.NewController(GinkgoT())
+		ld = tests.NewMockLedgerClient(mockCtrl)
+		wa, firstTx, _ = createWallet(ld)
+	})
+
 	It("Should send funds if acc has funds to send", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := tests.NewMockLedger(mockCtrl)
+		toAddr, _ := wa.CreateAddress()
 
-		wa, firstTx, _ := createWallet(ld)
+		expectedToAddr := &ledger.GetLastTransactionRequest{Address: toAddr.Address}
+		ld.EXPECT().GetLastTransaction(gomock.Any(), gomock.Eq(expectedToAddr), gomock.Any()).
+			Return(&ledger.GetLastTransactionResult{}, nil)
 
-		tx, err := wa.CreateSendTransaction(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 300)
+		expectedFromAddr := &ledger.GetLastTransactionRequest{Address: string(firstTx.Address)}
+		ld.EXPECT().GetLastTransaction(gomock.Any(), gomock.Eq(expectedFromAddr), gomock.Any()).
+			Return(&ledger.GetLastTransactionResult{Tx: firstTx}, nil)
+
+		expectedRegister := &ledger.RegisterResult{}
+		ld.EXPECT().Register(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(expectedRegister, nil)
+
+		tx, err := wa.Transfer(string(firstTx.Address), string(toAddr.Address), 300)
 		Expect(err).To(BeNil())
 
-		tx, err = ts.Retrieve(string(tx.Hash))
-		Expect(err).To(BeNil())
-		Expect(tx).NotTo(BeNil())
-
-		Expect(tx.Balance).To(Equal(float64(700)))
+		Expect(tx.Balance).To(Equal(float64(300)))
 	})
 
 	It("Should NOT send funds if acc has not enough funds to send", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := tests.NewMockLedger(mockCtrl)
+		toAddr, _ := wa.CreateAddress()
 
-		wa, firstTx, _ := createWallet(ld)
+		expectedToAddr := &ledger.GetLastTransactionRequest{Address: toAddr.Address}
+		ld.EXPECT().GetLastTransaction(gomock.Any(), gomock.Eq(expectedToAddr), gomock.Any()).
+			Return(&ledger.GetLastTransactionResult{}, nil)
 
-		tx, err := wa.CreateSendTransaction(string(firstTx.Address), "175jFeuksqWTjChY5L4kAN6pbEtgMSnynM", 1300)
+		expectedFromAddr := &ledger.GetLastTransactionRequest{Address: string(firstTx.Address)}
+		ld.EXPECT().GetLastTransaction(gomock.Any(), gomock.Eq(expectedFromAddr), gomock.Any()).
+			Return(&ledger.GetLastTransactionResult{Tx: firstTx}, nil)
+
+		tx, err := wa.Transfer(string(firstTx.Address), string(toAddr.Address), 1300)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrNotEnoughFunds))
 		Expect(tx).To(BeNil())
 	})
 
 	It("Should return the list of addresses", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := tests.NewMockLedger(mockCtrl)
-
-		wa, _, _ := createWallet(ld)
 		wa.CreateAddress()
 
 		addrs, err := wa.GetAddresses()
@@ -62,12 +80,8 @@ var _ = Describe("Wallet", func() {
 	})
 
 	It("Should return an address", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := tests.NewMockLedger(mockCtrl)
-
-		wa, _, _ := createWallet(ld)
 		addr2, _ := wa.CreateAddress()
 
 		addr, err := wa.GetAddress([]byte(addr2.Address))
@@ -76,29 +90,24 @@ var _ = Describe("Wallet", func() {
 	})
 
 	It("Should get address' statement", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := tests.NewMockLedger(mockCtrl)
-
-		wa, firstTx, _ := createWallet(ld)
-
-		ld.EXPECT().GetAddressStatement(gomock.Any())
+		ld.EXPECT().GetAddressStatement(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(&ledger.GetAddressStatementResult{Txs:[]*ledger.Transaction{firstTx}}, nil)
 
 		wa.GetAddressStatement(string(firstTx.Address))
 	})
 
 	It("Should get the last transaction", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		ld := tests.NewMockLedger(mockCtrl)
+		expectedAddr := &ledger.GetLastTransactionRequest{Address: string(firstTx.Address)}
+		ld.EXPECT().GetLastTransaction(gomock.Any(), expectedAddr, gomock.Any()).
+			Return(&ledger.GetLastTransactionResult{Tx:firstTx}, nil)
 
-		wa, firstTx, _ := createWallet(ld)
-
-		ld.EXPECT().GetLastTransaction(string(firstTx.Address))
-
-		wa.GetLastTransaction(string(firstTx.Address))
+		tx, err := wa.GetLastTransaction(string(firstTx.Address))
+		Expect(err).To(BeNil())
+		Expect(tx).To(Equal(firstTx))
 	})
 })
 
@@ -114,7 +123,7 @@ func createFirstTx() (*ledger.Transaction, *address.Address) {
 	return tx, addr
 }
 
-func createWallet(ld ledger.Ledger) (*wallet.Wallet, *ledger.Transaction, *address.Address) {
+func createWallet(ld ledger.LedgerClient) (*wallet.Wallet, *ledger.Transaction, *address.Address) {
 	ms := keyvaluestore.NewMemoryKeyValueStore()
 	as := keyvaluestore.NewMemoryKeyValueStore()
 	val := ledger.NewValidatorCreator()
@@ -125,5 +134,5 @@ func createWallet(ld ledger.Ledger) (*wallet.Wallet, *ledger.Transaction, *addre
 	as.Put(addr.Address, addr.ToBytes())
 	ts.Store(firstTx)
 
-	return wallet.New(ts, as, ld), firstTx, addr
+	return wallet.New(as, ld), firstTx, addr
 }

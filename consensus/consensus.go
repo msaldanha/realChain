@@ -21,33 +21,33 @@ type Consensus interface {
 
 type consensus struct {
 	ledger ledger.Ledger
-	address *address.Address
+	addr   *address.Address
 }
 
-func NewConsensus(ledger ledger.Ledger, address *address.Address) *consensus {
+func NewConsensus(ledger ledger.Ledger, addr *address.Address) *consensus {
 	return &consensus{
 		ledger: ledger,
-		address: address,
+		addr:   addr,
 	}
 }
 
 func (c *consensus) Vote(request *VoteRequest) (*VoteResult, error) {
 	err := c.ledger.VerifyTransaction(request.ReceiveTx, true)
 	if err != nil {
-		return c.createResult(false, err.Error())
+		return c.createVoteResult(false, err.Error())
 	}
 
 	err = c.ledger.VerifyTransaction(request.SendTx, true)
 	if err != nil {
-		return c.createResult(false, err.Error())
+		return c.createVoteResult(false, err.Error())
 	}
 
 	err = c.ledger.Verify(request.SendTx, request.ReceiveTx)
 	if err != nil {
-		return c.createResult(false, err.Error())
+		return c.createVoteResult(false, err.Error())
 	}
 
-	return c.createResult(true, "")
+	return c.createVoteResult(true, "")
 }
 
 func (c *consensus) Accept(request *AcceptRequest) (*AcceptResult, error) {
@@ -71,13 +71,13 @@ func (c *consensus) Accept(request *AcceptRequest) (*AcceptResult, error) {
 	return &AcceptResult{}, nil
 }
 
-func (c *consensus) createResult(ok bool, reason string) (*VoteResult, error) {
+func (c *consensus) createVoteResult(ok bool, reason string) (*VoteResult, error) {
 	vote := &Vote{Ok: ok, Reason: reason}
-	err := vote.Sign(c.address.Keys.ToEcdsaPrivateKey())
+	err := vote.Sign(c.addr.Keys.ToEcdsaPrivateKey())
 	if err != nil {
 		return nil, err
 	}
-	vote.PubKey = c.address.Keys.PublicKey
+	vote.PubKey = c.addr.Keys.PublicKey
 	return &VoteResult{Vote: vote}, nil
 }
 

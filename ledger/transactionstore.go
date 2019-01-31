@@ -23,8 +23,17 @@ func (ts *TransactionStore) Store(tx *Transaction) (*Transaction, error) {
 	if ok, err := ts.isValid(tx); !ok {
 		return nil, err
 	}
-	ts.store.Put(string(tx.Hash), tx.ToBytes())
-	ts.store.Put(string(tx.Address), tx.ToBytes())
+
+	err := ts.store.Put(string(tx.Hash), tx.ToBytes())
+	if err != nil {
+		return nil, err
+	}
+
+	err = ts.store.Put(string(tx.Address), tx.ToBytes())
+	if err != nil {
+		return nil, err
+	}
+
 	return tx, nil
 }
 
@@ -39,7 +48,7 @@ func (ts *TransactionStore) Retrieve(hash string) (*Transaction, error) {
 
 func (ts *TransactionStore) GetTransactionChain(txHash string, includeAll bool) ([]*Transaction, error) {
 	tx, ok, _ := ts.GetTransaction(txHash)
-	chain := []*Transaction{}
+	chain := make([]*Transaction, 0)
 	for ok {
 		chain = append(chain[:0], append([]*Transaction{tx}, chain[0:]...)...)
 		if len(tx.Previous) > 0 {

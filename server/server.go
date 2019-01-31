@@ -18,28 +18,28 @@ const (
 )
 
 type Server struct {
-	ledger    ledger.Ledger
-	consensus consensus.Consensus
-	discovery peerdiscovery.Discoverer
-	listener  net.Listener
+	ld  ledger.Ledger
+	con consensus.Consensus
+	dis peerdiscovery.Discoverer
+	lis net.Listener
 }
 
-func New(ledger ledger.Ledger,
-		consensus consensus.Consensus,
-		discovery peerdiscovery.Discoverer,
-		listener net.Listener) *Server {
-	return &Server{ledger: ledger, consensus: consensus, discovery: discovery, listener: listener}
+func New(ld ledger.Ledger,
+		con consensus.Consensus,
+		dis peerdiscovery.Discoverer,
+		lis net.Listener) *Server {
+	return &Server{ld: ld, con: con, dis: dis, lis: lis}
 }
 
 func (s *Server) Run() error {
 	grpcServer := grpc.NewServer()
 	consensus.RegisterConsensusServer(grpcServer, s)
 	ledger.RegisterLedgerServer(grpcServer, s)
-	return grpcServer.Serve(s.listener)
+	return grpcServer.Serve(s.lis)
 }
 
 func (s *Server) Register(ctx context.Context, request *ledger.RegisterRequest) (*ledger.RegisterResult, error) {
-	err := s.ledger.Verify(request.SendTx, request.ReceiveTx)
+	err := s.ld.Verify(request.SendTx, request.ReceiveTx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *Server) Register(ctx context.Context, request *ledger.RegisterRequest) 
 }
 
 func (s *Server) GetLastTransaction(ctx context.Context, request *ledger.GetLastTransactionRequest) (*ledger.GetLastTransactionResult, error) {
-	tx, err := s.ledger.GetLastTransaction(request.Address)
+	tx, err := s.ld.GetLastTransaction(request.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -60,15 +60,23 @@ func (s *Server) GetLastTransaction(ctx context.Context, request *ledger.GetLast
 }
 
 func (s *Server) GetTransaction(ctx context.Context, request *ledger.GetTransactionRequest) (*ledger.GetTransactionResult, error) {
-	tx, err := s.ledger.GetTransaction(request.Hash)
+	tx, err := s.ld.GetTransaction(request.Hash)
 	if err != nil {
 		return nil, err
 	}
 	return &ledger.GetTransactionResult{Tx: tx}, nil
 }
 
+func (s *Server) GetAddressStatement(ctx context.Context, request *ledger.GetAddressStatementRequest) (*ledger.GetAddressStatementResult, error) {
+	txs, err := s.ld.GetAddressStatement(request.Address)
+	if err != nil {
+		return nil, err
+	}
+	return &ledger.GetAddressStatementResult{Txs: txs}, nil
+}
+
 func (s *Server) VerifyTransaction(ctx context.Context, request *ledger.VerifyTransactionRequest) (*ledger.VerifyTransactionResult, error) {
-	err := s.ledger.VerifyTransaction(request.Tx, true)
+	err := s.ld.VerifyTransaction(request.Tx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +84,7 @@ func (s *Server) VerifyTransaction(ctx context.Context, request *ledger.VerifyTr
 }
 
 func (s *Server) Verify(ctx context.Context, request *ledger.VerifyRequest) (*ledger.VerifyResult, error) {
-	err := s.ledger.Verify(request.SendTx, request.ReceiveTx)
+	err := s.ld.Verify(request.SendTx, request.ReceiveTx)
 	if err != nil {
 		return nil, err
 	}
@@ -84,15 +92,15 @@ func (s *Server) Verify(ctx context.Context, request *ledger.VerifyRequest) (*le
 }
 
 func (s *Server) Vote(ctx context.Context, request *consensus.VoteRequest) (*consensus.VoteResult, error) {
-	return s.consensus.Vote(request)
+	return s.con.Vote(request)
 }
 
 func (s *Server) Accept(ctx context.Context, request *consensus.AcceptRequest) (*consensus.AcceptResult, error) {
-	return s.consensus.Accept(request)
+	return s.con.Accept(request)
 }
 
 func (s *Server) resolve(ctx context.Context, request *ledger.RegisterRequest) error {
-	peers, err := s.discovery.Peers()
+	peers, err := s.dis.Peers()
 	if err != nil {
 		return err
 	}
@@ -102,7 +110,7 @@ func (s *Server) resolve(ctx context.Context, request *ledger.RegisterRequest) e
 	}
 
 	nok := 0
-	votes := []*consensus.Vote{}
+	votes := make([]*consensus.Vote, 0)
 	for _, peer := range peers {
 		result, err := peer.Vote(ctx, &consensus.VoteRequest{SendTx: request.SendTx, ReceiveTx: request.ReceiveTx})
 		if err != nil {
@@ -118,7 +126,7 @@ func (s *Server) resolve(ctx context.Context, request *ledger.RegisterRequest) e
 		return ErrDeclinedByVoting
 	}
 
-	err = s.ledger.Register(request.SendTx, request.ReceiveTx)
+	err = s.ld.Register(request.SendTx, request.ReceiveTx)
 	if err != nil {
 		return err
 	}
