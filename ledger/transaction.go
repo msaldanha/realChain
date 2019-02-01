@@ -39,10 +39,9 @@ func CreateGenesisTransaction(balance float64) (*Transaction, *address.Address, 
 		return nil, nil, err
 	}
 
-	genesisTx.Address = []byte(addr.Address)
-	genesisTx.Representative = genesisTx.Address
+	genesisTx.Address = addr.Address
 	genesisTx.Balance = balance
-	genesisTx.PubKey = addr.Keys.PublicKey
+	genesisTx.PubKey = hex.EncodeToString(addr.Keys.PublicKey)
 
 	err = genesisTx.SetPow()
 	if err != nil {
@@ -61,7 +60,7 @@ func CreateSendTransaction(fromTipTx *Transaction, fromAddr *address.Address, to
 		amount float64) (*Transaction, error) {
 	sendTx := NewSendTransaction()
 	sendTx.Address = fromTipTx.Address
-	sendTx.Link = []byte(to)
+	sendTx.Link = to
 	sendTx.Previous = fromTipTx.Hash
 	sendTx.Balance = fromTipTx.Balance - amount
 	sendTx.PubKey = fromTipTx.PubKey
@@ -84,13 +83,11 @@ func CreateReceiveTransaction(send *Transaction, amount float64, receiveAddr *ad
 		receiveTx = NewReceiveTransaction()
 		receiveTx.Previous = receiveTipTx.Hash
 		receiveTx.Balance = receiveTipTx.Balance + amount
-		receiveTx.Representative = receiveTipTx.Representative
 		receiveTx.PubKey = receiveTipTx.PubKey
 	} else {
 		receiveTx = NewOpenTransaction()
 		receiveTx.Balance = amount
-		receiveTx.Representative = send.Link
-		receiveTx.PubKey = receiveAddr.Keys.PublicKey
+		receiveTx.PubKey = hex.EncodeToString(receiveAddr.Keys.PublicKey)
 	}
 
 	receiveTx.Address = send.Link
@@ -116,14 +113,14 @@ func (tx *Transaction) SetHash() error {
 	return nil
 }
 
-func (tx *Transaction) CalculateHash() ([]byte, error) {
+func (tx *Transaction) CalculateHash() (string, error) {
 	hashableBytes, err := tx.GetHashableBytes()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	headers := bytes.Join(hashableBytes, []byte{})
 	hash := sha256.Sum256(headers)
-	return []byte(hex.EncodeToString(hash[:])), nil
+	return hex.EncodeToString(hash[:]), nil
 }
 
 func (tx *Transaction) GetHashableBytes() ([][]byte, error) {
@@ -131,12 +128,13 @@ func (tx *Transaction) GetHashableBytes() ([][]byte, error) {
 	if err := binary.Write(&balance, binary.LittleEndian, tx.Balance); err != nil {
 		return nil, err
 	}
+
 	timestamp := []byte(strconv.FormatInt(tx.Timestamp, 10))
-	return [][]byte{timestamp, tx.Address, tx.Representative,
-		tx.Previous, tx.Link, balance.Bytes()}, nil
+
+	return [][]byte{timestamp, []byte(tx.Address), []byte(tx.Previous), []byte(tx.Link), balance.Bytes()}, nil
 }
 
-func (tx *Transaction) CalculatePow() (int64, []byte, error) {
+func (tx *Transaction) CalculatePow() (int64, string, error) {
 	var hashInt big.Int
 	var hash [32]byte
 	var nonce int64 = 0
@@ -145,7 +143,7 @@ func (tx *Transaction) CalculatePow() (int64, []byte, error) {
 
 	data, err := tx.GetHashableBytes()
 	if err != nil {
-		return 0, nil, err
+		return 0, "", err
 	}
 
 	for nonce < math.MaxInt64 {
@@ -160,7 +158,7 @@ func (tx *Transaction) CalculatePow() (int64, []byte, error) {
 		}
 	}
 
-	hexHash := []byte(hex.EncodeToString(hash[:]))
+	hexHash := hex.EncodeToString(hash[:])
 
 	return nonce, hexHash[:], nil
 }
@@ -192,16 +190,37 @@ func (tx *Transaction) VerifyPow() (bool, error) {
 }
 
 func (tx *Transaction) Sign(privateKey *ecdsa.PrivateKey) error {
-	s, err := crypto.Sign(tx.Hash, privateKey)
+	hash, err := hex.DecodeString(tx.Hash)
 	if err != nil {
 		return err
 	}
-	tx.Signature = s
+
+	s, err := crypto.Sign(hash, privateKey)
+	if err != nil {
+		return err
+	}
+
+	tx.Signature = hex.EncodeToString(s)
 	return nil
 }
 
 func (tx *Transaction) VerifySignature() bool {
-	return crypto.VerifySignature(tx.Signature, tx.PubKey, tx.Hash)
+	sign, err := hex.DecodeString(tx.Signature)
+	if err != nil {
+		return false
+	}
+
+	pubKey, err := hex.DecodeString(tx.PubKey)
+	if err != nil {
+		return false
+	}
+
+	hash, err := hex.DecodeString(tx.Hash)
+	if err != nil {
+		return false
+	}
+
+	return crypto.VerifySignature(sign, pubKey, hash)
 }
 
 func (tx *Transaction) ToBytes() []byte {

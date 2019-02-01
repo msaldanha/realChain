@@ -14,7 +14,6 @@ const (
 	ErrTransactionPowNonceCantBeZero        = errors.Error("transaction PoW nonce can not be zero")
 	ErrTransactionHashCantBeEmpty           = errors.Error("transaction hash can not be empty")
 	ErrTransactionLinkCantBeEmpty           = errors.Error("transaction link can not be empty")
-	ErrTransactionRepresentativeCantBeEmpty = errors.Error("transaction representative can not be empty")
 	ErrDestinationNotFound                  = errors.Error("destination not found")
 	ErrSourceNotFound                       = errors.Error("source not found")
 	ErrInvalidSourceType                    = errors.Error("invalid source type")
@@ -70,7 +69,6 @@ func (*validatorCreator) CreateValidatorForTransaction(txType Transaction_Type, 
 	default:
 		return &BaseValidator{store}
 	}
-	return nil
 }
 
 func (v *BaseValidator) IsValid(tx *Transaction) (bool, error) {
@@ -114,9 +112,6 @@ func (v *OpenValidator) IsFilled(tx *Transaction) (bool, error) {
 	}
 	if len(tx.Link) == 0 && !v.store.IsEmpty() {
 		return false, ErrTransactionLinkCantBeEmpty
-	}
-	if len(tx.Representative) == 0 {
-		return false, ErrTransactionRepresentativeCantBeEmpty
 	}
 	if len(tx.Signature) == 0 {
 		return false, ErrTransactionSignatureCantBeEmpty
@@ -209,9 +204,6 @@ func (v *ChangeValidator) IsFilled(tx *Transaction) (bool, error) {
 	}
 	if ok, err := v.BaseValidator.IsFilled(tx); !ok {
 		return ok, err
-	}
-	if len(tx.Representative) == 0 {
-		return false, ErrTransactionRepresentativeCantBeEmpty
 	}
 	return v.BaseValidator.IsFilled(tx)
 }

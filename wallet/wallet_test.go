@@ -1,6 +1,7 @@
 package wallet_test
 
 import (
+	"encoding/hex"
 	"github.com/msaldanha/realChain/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -114,10 +115,9 @@ var _ = Describe("Wallet", func() {
 func createFirstTx() (*ledger.Transaction, *address.Address) {
 	tx := ledger.NewOpenTransaction()
 	addr, _ := address.NewAddressWithKeys()
-	tx.Address = []byte(addr.Address)
-	tx.Representative = tx.Address
+	tx.Address = addr.Address
 	tx.Balance = 1000
-	tx.PubKey = addr.Keys.PublicKey
+	tx.PubKey = hex.EncodeToString(addr.Keys.PublicKey)
 	tx.SetPow()
 	tx.Sign(addr.Keys.ToEcdsaPrivateKey())
 	return tx, addr

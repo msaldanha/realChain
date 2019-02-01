@@ -12,42 +12,42 @@ var _ = Describe("Transaction", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		tx := &ledger.Transaction{Type: ledger.Transaction_RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
-			Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"),
+		tx := &ledger.Transaction{Type: ledger.Transaction_RECEIVE, Link: "dddddddddddd", Previous: "bbbbbbbbbb",
+			Signature: "ffffffffff", Balance: 1,
+			PowNonce: 1, Address: "aaaaaaaaaa",
 			Timestamp: 1}
 
 		tx.SetHash()
-		Expect(tx.Hash).To(Equal([]byte("a246ce6b1d2b57ac33073127d8f9539fca32fb48481d46d734bf3308796ee18b")))
+		Expect(tx.Hash).To(Equal("86ae3bd95c4f1a200e3a8ee1655710321b2a2becaccd9ce6ed832cd4dc92502f"))
 	})
 
 	It("Should calculate the PoW ", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		tx := &ledger.Transaction{Type: ledger.Transaction_SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
-			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
-			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+		tx := &ledger.Transaction{Type: ledger.Transaction_SEND, Link: "dddddddddddd", Previous: "bbbbbbbbbb",
+			Signature: "777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2", Balance: 1,
+			PowNonce: 1, Address: "aaaaaaaaaa", Timestamp: 1}
 		tx.SetHash()
 
 		err := tx.SetPow()
 		Expect(err).To(BeNil())
 
-		Expect(tx.PowNonce).To(Equal(int64(33794)))
-		Expect(tx.Hash).To(Equal([]byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")))
+		Expect(tx.PowNonce).To(Equal(int64(54914)))
+		Expect(tx.Hash).To(Equal("0000a52076206cee2400d1a05a60d1768183ba8ddfd9ba6140ff13296f53dbaa"))
 	})
 
 	It("Should verify the PoW ", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		defer mockCtrl.Finish()
 
-		tx := &ledger.Transaction{Type: ledger.Transaction_SEND, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"),
-			Signature: []byte("777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2"), Balance: 1,
-			PowNonce: 1, Address: []byte("aaaaaaaaaa"), Representative: []byte("rrrrrrrrrrrrrrr"), Timestamp: 1}
+		tx := &ledger.Transaction{Type: ledger.Transaction_SEND, Link: "dddddddddddd", Previous: "bbbbbbbbbb",
+			Signature: "777d713768de05cb16cbc24eef83b43b20a3a80dce05549f130aaf5a4234e4c2", Balance: 1,
+			PowNonce: 1, Address: "aaaaaaaaaa", Timestamp: 1}
 		tx.SetHash()
 
-		tx.PowNonce = int64(33794)
-		tx.Hash = []byte("0000f4722f6416ddb43a4ee56921dd3a24c93b051a570e14ca07cd174517cf12")
+		tx.PowNonce = int64(54914)
+		tx.Hash = "00006a216f8ea0ecc5f106bd6401b7986a0e45670fc55aa2fbe6b49c3dbb4133"
 
 		ok, err := tx.VerifyPow()
 		Expect(err).To(BeNil())

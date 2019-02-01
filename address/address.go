@@ -2,6 +2,7 @@ package address
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"golang.org/x/crypto/ripemd160"
 	"bytes"
 	"github.com/msaldanha/realChain/errors"
@@ -48,16 +49,23 @@ func NewAddressForKeys(keys *keypair.KeyPair) (*Address, error) {
 func NewAddressFromBytes(a []byte) *Address {
 	var acc Address
 	decoder := xdr.NewDecoder(bytes.NewReader(a))
-	decoder.Decode(&acc)
+	_, _ = decoder.Decode(&acc)
 	return &acc
 }
 
-func MatchesPubKey(addr []byte, pubKey []byte) bool {
-	hash, err := generateAddressHash(pubKey)
+func MatchesPubKey(addr string, pubKey string) bool {
+	pk, err := hex.DecodeString(pubKey)
 	if err != nil {
 		return false
 	}
-	return bytes.Equal(addr, hash)
+
+	hash, err := generateAddressHash(pk)
+	if err != nil {
+		return false
+	}
+
+
+	return addr == hash
 }
 
 func IsValid(addr string) (bool, error) {
@@ -81,17 +89,17 @@ func (a *Address) ToBytes() []byte {
 	return result.Bytes()
 }
 
-func generateAddressHash(pubKey []byte) ([]byte, error) {
+func generateAddressHash(pubKey []byte) (string, error) {
 	pubKeyHash, err := hashPubKey(pubKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	versionedPayload := append([]byte{version}, pubKeyHash...)
 	checksum := checksum(versionedPayload)
 
 	fullPayload := append(versionedPayload, checksum...)
-	address := Base58Encode(fullPayload)
+	address := string(Base58Encode(fullPayload))
 
 	return address, nil
 }

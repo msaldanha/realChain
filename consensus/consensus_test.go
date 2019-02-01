@@ -31,10 +31,10 @@ var _ = Describe("Consensus", func() {
 		receiveAddr, err := address.NewAddressWithKeys()
 		Expect(err).To(BeNil())
 
-		sendTx, err = tests.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 300)
+		sendTx, err = ledger.CreateSendTransaction(genesisTx, genesisAddr, receiveAddr.Address, 300)
 		Expect(err).To(BeNil())
 
-		receiveTx, err = tests.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
+		receiveTx, err = ledger.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
 		Expect(err).To(BeNil())
 	})
 

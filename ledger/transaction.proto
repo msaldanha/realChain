@@ -16,15 +16,14 @@ message Transaction {
 
     int64 Timestamp = 1;
     Type type = 2;
-    bytes address = 3;
-    bytes representative = 4;
-    bytes previous = 5;
-    bytes link = 6;
-    double balance = 7;
-    int32 powTarget = 8;
-    int64 powNonce = 9;
-    bytes hash = 10;
-    bytes pubKey = 11;
-    bytes signature = 12;
+    string address = 3;
+    string previous = 4;
+    string link = 5;
+    double balance = 6;
+    int32 powTarget = 7;
+    int64 powNonce = 8;
+    string hash = 9;
+    string pubKey = 10;
+    string signature = 11;
 
 }

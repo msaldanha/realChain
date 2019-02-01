@@ -1,7 +1,6 @@
 package ledger
 
 import (
-	"bytes"
 	"github.com/msaldanha/realChain/address"
 	"math"
 )
@@ -106,7 +105,7 @@ func (ld *LocalLedger) VerifyTransaction(tx *Transaction, isNew bool) error {
 			if head == nil {
 				return ErrHeadTransactionNotFound
 			}
-			if bytes.Compare(head.Hash, previous.Hash) != 0 {
+			if head.Hash != previous.Hash {
 				return ErrPreviousTransactionIsNotHead
 			}
 		}
@@ -220,7 +219,7 @@ func (ld *LocalLedger) isPendingTransaction(tx *Transaction) (bool, error) {
 		return false, err
 	}
 	for _, v := range chain {
-		if bytes.Equal(tx.Hash, v.Link) {
+		if tx.Hash == v.Link {
 			return false, nil
 		}
 	}

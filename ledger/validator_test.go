@@ -37,14 +37,14 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrTransactionAddressCantBeEmpty))
 
-		tx.Address = []byte("xxxxxxxxxxxxxxxxxxx")
+		tx.Address = "dddddddddddd"
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrTransactionSignatureCantBeEmpty))
 
-		tx.Signature = []byte("ssssssssssssssssssssss")
+		tx.Signature = "aaaaaaaaaa"
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
@@ -58,28 +58,21 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrTransactionHashCantBeEmpty))
 
-		tx.Hash = []byte("xxxxxxxxxxxxxxxxxxx")
+		tx.Hash = "dddddddddddd"
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrPubKeyCantBeEmpty))
 
-		tx.PubKey = []byte("xxxxxxxxxxxxxxxxxxx")
+		tx.PubKey = "dddddddddddd"
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeFalse())
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrTransactionLinkCantBeEmpty))
 
-		tx.Link = []byte("xxxxxxxxxxxxxxxxxxx")
-
-		ok, err = val.IsFilled(tx)
-		Expect(ok).To(BeFalse())
-		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(ledger.ErrTransactionRepresentativeCantBeEmpty))
-
-		tx.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
+		tx.Link = "dddddddddddd"
 
 		ok, err = val.IsFilled(tx)
 		Expect(ok).To(BeTrue())
@@ -108,7 +101,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrTransactionLinkCantBeEmpty))
 
-		tx.Link = []byte("xxxxxxxxxxxxxxxxxxx")
+		tx.Link = "dddddddddddd"
 	})
 
 	It("Should not accept empty/partial filled transaction for RECEIVE type", func() {
@@ -133,32 +126,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrTransactionLinkCantBeEmpty))
 
-		tx.Link = []byte("xxxxxxxxxxxxxxxxxxx")
-	})
-
-	It("Should not accept empty/partial filled transaction for CHANGE type", func() {
-		mockCtrl := gomock.NewController(GinkgoT())
-		defer mockCtrl.Finish()
-
-		ms := tests.CreateNonEmptyMemoryStore()
-		val := ledger.NewValidatorCreator().CreateValidatorForTransaction(ledger.Transaction_CHANGE, ms)
-
-		tx := &ledger.Transaction{}
-		ok, err := val.IsFilled(tx)
-		Expect(ok).To(BeFalse())
-		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(ledger.ErrInvalidTransactionType))
-
-		tx.Type = ledger.Transaction_CHANGE
-
-		tests.AssertCommonVal(val, tx)
-
-		ok, err = val.IsFilled(tx)
-		Expect(ok).To(BeFalse())
-		Expect(err).NotTo(BeNil())
-		Expect(err).To(Equal(ledger.ErrTransactionRepresentativeCantBeEmpty))
-
-		tx.Representative = []byte("xxxxxxxxxxxxxxxxxxx")
+		tx.Link = "dddddddddddd"
 	})
 
 	It("Should not accept OPEN transaction with invalid fields", func() {
@@ -167,9 +135,9 @@ var _ = Describe("Validator", func() {
 
 		ms := tests.CreateNonEmptyMemoryStore()
 		val := ledger.NewValidatorCreator().CreateValidatorForTransaction(ledger.Transaction_OPEN, ms)
-		tx := &ledger.Transaction{Type: ledger.Transaction_OPEN, Link: []byte([]byte("ddddddddddddd")), Previous: []byte([]byte("ppppppppp")),
-		Signature: []byte([]byte("ssssssss")), Balance: 1, Timestamp: 1, PubKey: []byte("kkkkkkk"),
-			PowNonce: 1, Representative:[]byte("rrrrrrrrrrrrrrr")}
+		tx := &ledger.Transaction{Type: ledger.Transaction_OPEN, Link: "dddddddddddd", Previous: "bbbbbbbbbb",
+		Signature: "ffffffffff", Balance: 1, Timestamp: 1, PubKey: "eeeeeeeeee",
+			PowNonce: 1}
 		tx.SetHash()
 
 		ok, err := val.IsValid(tx)
@@ -177,7 +145,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrTransactionAddressCantBeEmpty))
 
-		tx.Address = []byte("aaaaaaaaaa")
+		tx.Address = "aaaaaaaaaa"
 
 		ok, err = val.IsValid(tx)
 		Expect(err).To(BeNil())
@@ -190,8 +158,8 @@ var _ = Describe("Validator", func() {
 
 		ms := tests.CreateNonEmptyMemoryStore()
 		val := ledger.NewValidatorCreator().CreateValidatorForTransaction(ledger.Transaction_SEND, ms)
-		tx := &ledger.Transaction{Type: ledger.Transaction_SEND, Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
+		tx := &ledger.Transaction{Type: ledger.Transaction_SEND, Previous: "bbbbbbbbbb", Signature: "ffffffffff", Balance: 1,
+			PowNonce: 1, Address: "aaaaaaaaaa", Timestamp: 1, PubKey: "eeeeeeeeee"}
 		tx.SetHash()
 
 		ok, err := val.IsValid(tx)
@@ -199,7 +167,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrTransactionLinkCantBeEmpty))
 
-		tx.Link = []byte("ddddddddddddd")
+		tx.Link = "dddddddddddd"
 
 		ok, err = val.IsValid(tx)
 		Expect(err).To(BeNil())
@@ -213,8 +181,8 @@ var _ = Describe("Validator", func() {
 
 		ms := tests.CreateNonEmptyMemoryStore()
 		val := ledger.NewValidatorCreator().CreateValidatorForTransaction(ledger.Transaction_RECEIVE, ms)
-		tx := &ledger.Transaction{Type: ledger.Transaction_RECEIVE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
+		tx := &ledger.Transaction{Type: ledger.Transaction_RECEIVE, Link: "dddddddddddd", Previous: "bbbbbbbbbb", Signature: "ffffffffff", Balance: 1,
+			PowNonce: 1, Address: "aaaaaaaaaa", Timestamp: 1, PubKey: "eeeeeeeeee"}
 		tx.SetHash()
 
 		ok, err := val.IsValid(tx)
@@ -222,9 +190,9 @@ var _ = Describe("Validator", func() {
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrSourceNotFound))
 
-		source := &ledger.Transaction{Type: ledger.Transaction_OPEN, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
-		ms.Put("ddddddddddddd", source.ToBytes())
+		source := &ledger.Transaction{Type: ledger.Transaction_OPEN, Link: "dddddddddddd", Previous: "bbbbbbbbbb", Signature: "ffffffffff", Balance: 1,
+			PowNonce: 1, Address: "aaaaaaaaaa", Timestamp: 1, PubKey: "eeeeeeeeee"}
+		ms.Put("dddddddddddd", source.ToBytes())
 
 		ok, err = val.IsValid(tx)
 		Expect(ok).To(BeFalse())
@@ -232,7 +200,7 @@ var _ = Describe("Validator", func() {
 		Expect(err).To(Equal(ledger.ErrInvalidSourceType))
 
 		source.Type = ledger.Transaction_SEND
-		ms.Put("ddddddddddddd", source.ToBytes())
+		ms.Put("dddddddddddd", source.ToBytes())
 
 		ok, err = val.IsValid(tx)
 		Expect(err).To(BeNil())
@@ -245,8 +213,8 @@ var _ = Describe("Validator", func() {
 
 		ms := tests.CreateNonEmptyMemoryStore()
 		val := ledger.NewValidatorCreator().CreateValidatorForTransaction(ledger.Transaction_CHANGE, ms)
-		tx := &ledger.Transaction{Type: ledger.Transaction_CHANGE, Link: []byte("ddddddddddddd"), Previous: []byte("ppppppppp"), Signature: []byte("ssssssss"), Balance: 1,
-			PowNonce: 1, Address:[]byte("aaaaaaaaaa"), Representative:[]byte("rrrrrrrrrrrrrrr"), Timestamp: 1, PubKey: []byte("kkkkkkk")}
+		tx := &ledger.Transaction{Type: ledger.Transaction_CHANGE, Link: "dddddddddddd", Previous: "bbbbbbbbbb", Signature: "ffffffffff", Balance: 1,
+			PowNonce: 1, Address: "aaaaaaaaaa", Timestamp: 1, PubKey: "eeeeeeeeee"}
 		tx.SetHash()
 
 		ok, err := val.IsValid(tx)

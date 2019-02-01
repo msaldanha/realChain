@@ -1,6 +1,7 @@
 package ledger_test
 
 import (
+	"encoding/hex"
 	"github.com/golang/mock/gomock"
 	"github.com/msaldanha/realChain/address"
 	"github.com/msaldanha/realChain/keyvaluestore"
@@ -35,7 +36,7 @@ var _ = Describe("Ledger", func() {
 		err := ld.Initialize(genesisTx)
 		Expect(err).To(BeNil())
 
-		tx, err := bs.Retrieve(string(genesisTx.Hash))
+		tx, err := bs.Retrieve(genesisTx.Hash)
 		Expect(err).To(BeNil())
 		Expect(tx).NotTo(BeNil())
 	})
@@ -51,12 +52,12 @@ var _ = Describe("Ledger", func() {
 		Expect(addr).NotTo(BeNil())
 
 		Expect(tx.Balance).To(Equal(float64(2000)))
-		Expect(tx.Address).To(Equal([]byte(addr.Address)))
-		Expect(tx.PubKey).To(Equal([]byte(addr.Keys.PublicKey)))
-		Expect(tx.Previous).To(BeNil())
-		Expect(tx.Link).To(BeNil())
-		Expect(tx.Signature).NotTo(BeNil())
-		Expect(tx.Hash).NotTo(BeNil())
+		Expect(tx.Address).To(Equal(addr.Address))
+		Expect(tx.PubKey).To(Equal(hex.EncodeToString(addr.Keys.PublicKey)))
+		Expect(tx.Previous).To(Equal(""))
+		Expect(tx.Link).To(Equal(""))
+		Expect(tx.Signature).NotTo(Equal(""))
+		Expect(tx.Hash).NotTo(Equal(""))
 	})
 
 	It("Should get a transaction", func() {
@@ -130,7 +131,7 @@ var _ = Describe("Ledger", func() {
 		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 300, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
-		receiveTx.Address = []byte("xxxxxxxxxxxxx")
+		receiveTx.Address = "xxxxxxxxxxxxx"
 
 		err = ld.Register(sendTx, receiveTx)
 		Expect(err).NotTo(BeNil())
@@ -228,9 +229,9 @@ var _ = Describe("Ledger", func() {
 		// Restore balance
 		sendTx.Balance = float64(600)
 		// Tamper with signature
-		sendTx.Signature[0] = sendTx.Signature[0] + 1
+		sendTx.Signature = sendTx.Signature + "1"
 
-		err = ld.Register(sendTx, receiveTx)
+				err = ld.Register(sendTx, receiveTx)
 		Expect(err).NotTo(BeNil())
 		Expect(err).To(Equal(ledger.ErrInvalidTransactionSignature))
 	})
@@ -286,7 +287,7 @@ var _ = Describe("Ledger", func() {
 		receiveTx, err := ledger.CreateReceiveTransaction(sendTx, 400, receiveAddr, nil)
 		Expect(err).To(BeNil())
 
-		sendTx.PubKey[0] = sendTx.PubKey[0] + 1
+		sendTx.PubKey = sendTx.PubKey + "1"
 
 		err = ld.Register(sendTx, receiveTx)
 		Expect(err).NotTo(BeNil())

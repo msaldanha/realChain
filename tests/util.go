@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/hex"
 	"github.com/msaldanha/realChain/ledger"
 	. "github.com/onsi/gomega"
 	"time"
@@ -23,21 +24,21 @@ func AssertCommonVal(val ledger.Validator, tx *ledger.Transaction) {
 	Expect(err).NotTo(BeNil())
 	Expect(err).To(Equal(ledger.ErrTransactionAddressCantBeEmpty))
 
-	tx.Address = []byte("xxxxxxxxxxxxxxxxxxx")
+	tx.Address = "xxxxxxxxxxxxxxxxxxx"
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
 	Expect(err).To(Equal(ledger.ErrPreviousTransactionCantBeEmpty))
 
-	tx.Previous = []byte("yyyyyyyyyyyyyyyyyyyy")
+	tx.Previous = "aaaaaaaaaa"
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
 	Expect(err).NotTo(BeNil())
 	Expect(err).To(Equal(ledger.ErrTransactionSignatureCantBeEmpty))
 
-	tx.Signature = []byte("ssssssssssssssssssssss")
+	tx.Signature = "bbbbbbbbbb"
 
 	ok, err = val.IsFilled(tx)
 	Expect(ok).To(BeFalse())
@@ -58,7 +59,7 @@ func AssertCommonVal(val ledger.Validator, tx *ledger.Transaction) {
 	Expect(err).NotTo(BeNil())
 	Expect(err).To(Equal(ledger.ErrPubKeyCantBeEmpty))
 
-	tx.PubKey = []byte("ssssssssssssssssssssss")
+	tx.PubKey = "ffffffffff"
 }
 
 func CreateNonEmptyMemoryStore() *keyvaluestore.MemoryKeyValueStore {
@@ -80,20 +81,14 @@ func DumpTxChain(txChain []*ledger.Transaction) {
 	fmt.Println("============= End =================")
 }
 
-func CreateTestAddress() *address.Address {
-	addr, _ := address.NewAddressWithKeys()
-	return addr
-}
-
 func CreateGenesisTransaction(balance float64) (*ledger.Transaction, *address.Address) {
 	genesisTx := ledger.NewOpenTransaction()
 	addr, err := address.NewAddressWithKeys()
 	Expect(err).To(BeNil())
 
-	genesisTx.Address = []byte(addr.Address)
-	genesisTx.Representative = genesisTx.Address
+	genesisTx.Address = addr.Address
 	genesisTx.Balance = balance
-	genesisTx.PubKey = addr.Keys.PublicKey
+	genesisTx.PubKey = hex.EncodeToString(addr.Keys.PublicKey)
 
 	err = genesisTx.SetPow()
 	Expect(err).To(BeNil())
@@ -103,7 +98,6 @@ func CreateGenesisTransaction(balance float64) (*ledger.Transaction, *address.Ad
 
 	return genesisTx, addr
 }
-
 
 func SendFunds(ld ledger.Ledger, sendAddr *address.Address, prevSendTx *ledger.Transaction, prevReceiveTx *ledger.Transaction,
 		receiveAddr *address.Address, amount float64) (*ledger.Transaction, *ledger.Transaction) {

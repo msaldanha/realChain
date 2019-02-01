@@ -1,6 +1,7 @@
 package address_test
 
 import (
+	"encoding/hex"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/golang/mock/gomock"
@@ -48,10 +49,10 @@ var _ = Describe("Address", func() {
 		addr1, _ := address.NewAddressWithKeys()
 		addr2, _ := address.NewAddressWithKeys()
 
-		match := address.MatchesPubKey([]byte(addr1.Address), addr1.Keys.PublicKey)
+		match := address.MatchesPubKey(addr1.Address, hex.EncodeToString(addr1.Keys.PublicKey))
 		Expect(match).To(BeTrue())
 
-		match = address.MatchesPubKey([]byte(addr1.Address), addr2.Keys.PublicKey)
+		match = address.MatchesPubKey(addr1.Address, hex.EncodeToString(addr2.Keys.PublicKey))
 		Expect(match).To(BeFalse())
 	})
 })
