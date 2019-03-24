@@ -58,7 +58,7 @@ var ledgerInitCmd = &cobra.Command{
 
 		err = as.Init(asOpts)
 		if err != nil {
-			fmt.Printf("Address store init failed: %s ", err)
+			fmt.Printf("Address store init failed: %s \n", err)
 			os.Exit(1)
 		}
 
@@ -91,6 +91,6 @@ var ledgerInitCmd = &cobra.Command{
 			fmt.Printf("Failed to initialize the Ledger: %s\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("Ledger successfuly initialized. Genesis address: %s, Start balance: %f", addr.Address, startAmount)
+		fmt.Printf("Ledger successfuly initialized. Genesis address: %s, Start balance: %f\n", addr.Address, startAmount)
 	},
 }
