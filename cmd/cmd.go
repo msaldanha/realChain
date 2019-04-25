@@ -30,7 +30,7 @@ func init() {
 
 	err := cfg.ReadInConfig()
 	if err != nil {
-		log.Fatalf("Error loading config file: %s \n", err)
+		log.Printf("Error loading config file: %s . Using defaults.\n", err)
 	}
 
 	rootCmd = &cobra.Command{Use: "realChain"}
